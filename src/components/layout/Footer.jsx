@@ -59,7 +59,7 @@ const Footer = () => {
           <div className="buttons-icon w-[30px] h-[30px] p-[6px] relative cursor-pointer hover:opacity-80">
             <img
               className="icon w-[18px] h-[18px]  top-[6px] left-[6px]"
-              src="icon0.svg"
+              src="/icon0.svg"
               alt="Social Icon 1"
             />
           </div>
@@ -67,21 +67,21 @@ const Footer = () => {
             {" "}
             <img
               className="icon2 w-[18px] h-[18px]  top-[6px] left-[6px]"
-              src="icon1.svg"
+              src="/icon1.svg"
               alt="Social Icon 2"
             />
           </div>
           <div className="buttons-icon w-[30px] h-[30px] p-[6px] relative cursor-pointer hover:opacity-80">
             <img
               className="icon3 w-[18px] h-[18px]  top-[6px] left-[6px]"
-              src="icon2.svg"
+              src="/icon2.svg"
               alt="Social Icon 3"
             />
           </div>
           <div className="buttons-icon w-[30px] h-[30px] p-[6px] relative cursor-pointer hover:opacity-80">
             <img
               className="icon4 w-[18px] h-[18px] top-[6px] left-[6px]"
-              src="icon3.svg"
+              src="/icon3.svg"
               alt="Social Icon 4"
             />
           </div>

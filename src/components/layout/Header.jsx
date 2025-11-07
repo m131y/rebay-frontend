@@ -30,7 +30,7 @@ const Header = () => {
       <header className="w-full max-w-full mx-auto h-[110px] bg-white flex items-center justify-between px-[30px] sticky top-0 z-10 border-b border-gray-200 shadow-sm">
         <div className="flex space-x-15">
           <Link to="/">
-            <img src="image-Photoroom.png" alt="ReBay" className="w-30" />
+            <img src="/image-Photoroom.png" alt="ReBay" className="w-30" />
           </Link>
 
           <form className="flex items-center">

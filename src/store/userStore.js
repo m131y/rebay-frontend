@@ -28,8 +28,8 @@ const useUserStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await userService.updateProfile(userData);
-      console.log("userService:", response.data);
-      return response.data;
+      console.log("userService:", data);
+      return data;
     } catch (err) {
       set({
         error: err.response?.data.message || "Failed to update userprofile",

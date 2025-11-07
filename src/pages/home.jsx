@@ -75,7 +75,7 @@ const Home = () => {
 
             <div className="w-full h-auto">
               <div className="grid grid-cols-5 gap-[10px]">
-                <Product />
+                <Product title="hi" price="1400" desc="중고" />
                 <Product />
                 <Product />
                 <Product />

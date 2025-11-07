@@ -16,13 +16,12 @@ import useAuthStore from "../store/authStore";
 import { useEffect, useState } from "react";
 import EditPassword from "../components/auth/editPassword";
 import FileUpload from "../components/file/fileUpload";
+import s3Service from "../services/s3";
 
 const EditProfile = () => {
   const { targetUserId } = useParams();
   const { user } = useAuthStore();
   const { userProfile, getUserProfile, updateProfile, error } = useUserStore();
-
-  const navigate = useNavigate();
 
   const [showFileUpload, setShowFileUpload] = useState(false);
   const [showUpdatePassword, setShowUpdatePassword] = useState(false);
@@ -46,7 +45,7 @@ const EditProfile = () => {
       }
     };
     loadUserProfile();
-  }, [getUserProfile]);
+  }, [getUserProfile, targetUserId]);
 
   useEffect(() => {
     if (userProfile) {
@@ -72,6 +71,18 @@ const EditProfile = () => {
     setFormData((prev) => ({ ...prev, enabled: !prev.enabled }));
   };
 
+  const handleFileUploadClose = (newImageUrl) => {
+    setShowFileUpload(false);
+
+    if (newImageUrl) {
+      setFormData((prev) => ({
+        ...prev,
+        profileImageUrl: newImageUrl,
+      }));
+    } else {
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setIsSaving(true);
@@ -85,6 +96,13 @@ const EditProfile = () => {
     }
   };
 
+  const avatarUser = userProfile
+    ? {
+        ...userProfile,
+        profileImageUrl: formData.profileImageUrl,
+      }
+    : null;
+
   return (
     <MainLayout>
       <Header />
@@ -94,14 +112,18 @@ const EditProfile = () => {
             <form onSubmit={handleSubmit}>
               <div className="w-[990px] flex justify-between">
                 <div className="mr-10">
-                  <button
-                    onClick={() => setShowFileUpload(true)}
-                    type="button"
-                    className="cursor-pointer absolute m-4 size-13 flex items-center text-white justify-center rounded-full bg-rebay-blue"
-                  >
-                    <FiPlus size={30} />
-                  </button>
-                  <Avatar size="size-[300px]" />
+                  {avatarUser && (
+                    <>
+                      <button
+                        onClick={() => setShowFileUpload(true)}
+                        type="button"
+                        className="cursor-pointer absolute m-4 size-13 flex items-center text-white justify-center rounded-full bg-rebay-blue z-10"
+                      >
+                        <FiPlus size={30} />
+                      </button>
+                      <Avatar user={avatarUser} size="size-[300px]" />
+                    </>
+                  )}
                 </div>
                 <div className="font-presentation space-y-4 text-2xl flex w-full flex-col items-center ">
                   {error && <p className="text-error">{error}</p>}
@@ -217,7 +239,7 @@ const EditProfile = () => {
 
       {showFileUpload && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <FileUpload onClose={() => setShowFileUpload(false)} />
+          <FileUpload user={userProfile} onClose={handleFileUploadClose} />
         </div>
       )}
 

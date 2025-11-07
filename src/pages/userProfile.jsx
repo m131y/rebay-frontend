@@ -80,7 +80,7 @@ const UserProfile = () => {
           <main className="w-full flex-grow flex flex-col items-center mt-[70px] py-10">
             <div className="font-presentation flex justify-between items-center w-[990px]">
               <div className="flex items-center">
-                <Avatar size="size-[150px]" />
+                <Avatar user={userProfile} size="size-[150px]" />
                 <div className="ml-10 ">
                   <div className="text-2xl">{userProfile.username}</div>
                   <div className="flex">
@@ -141,16 +141,16 @@ const UserProfile = () => {
                 <section className="mt-[20px] w-full h-[700px] flex flex-col items-center justify-start space-y-5 mx-auto">
                   <div className="w-full h-auto">
                     <div className="grid grid-cols-5 gap-[10px]">
-                      <Product />
-                      <Product />
-                      <Product />
-                      <Product />
-                      <Product />
-                      <Product />
-                      <Product />
-                      <Product />
-                      <Product />
-                      <Product />
+                      <Product variant="lg" />
+                      <Product variant="lg" />
+                      <Product variant="lg" />
+                      <Product variant="lg" />
+                      <Product variant="lg" />
+                      <Product variant="lg" />
+                      <Product variant="lg" />
+                      <Product variant="lg" />
+                      <Product variant="lg" />
+                      <Product variant="lg" />
                     </div>
                   </div>
                 </section>
