@@ -42,11 +42,11 @@ const Login = ({ onClose, onOpenSignup }) => {
     });
   };
 
-  //   const handleSocialLogin = (provider) => {
-  //     window.location.href = `${
-  //       import.meta.env.VITE_API_URL
-  //     }/oauth2/authorization/${provider}`;
-  //   };
+  const handleSocialLogin = (provider) => {
+    window.location.href = `${
+      import.meta.env.VITE_API_URL
+    }/oauth2/authorization/${provider}`;
+  };
 
   return (
     <div>
@@ -109,12 +109,18 @@ const Login = ({ onClose, onOpenSignup }) => {
               </div>
 
               <div className="font-presentation flex flex-col justify-center items-center gap-[15px] mb-4">
-                <button className="border-1 border-gray-200 w-full h-[50px] rounded-lg text-sm font-bold  flex items-center justify-center gap-[10px]">
+                <button
+                  onClick={() => handleSocialLogin("google")}
+                  className="cursor-pointer border-1 border-gray-200 w-full h-[50px] rounded-lg text-sm font-bold  flex items-center justify-center gap-[10px]"
+                >
                   <FcGoogle />
                   Continue with Google
                 </button>
 
-                <button className="border-1 border-gray-200 w-full h-[50px] rounded-lg text-sm font-bold flex items-center justify-center gap-[10px]">
+                <button
+                  onClick={() => handleSocialLogin("github")}
+                  className="cursor-pointer border-1 border-gray-200 w-full h-[50px] rounded-lg text-sm font-bold flex items-center justify-center gap-[10px]"
+                >
                   <FaGithub />
                   Continue with Github
                 </button>

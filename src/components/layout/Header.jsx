@@ -55,10 +55,16 @@ const Header = () => {
               판매하기
             </Link>
             <Link
-              to="/"
+              to="/products"
               className="font-presentation text-black text-[15px] font-medium cursor-pointer hover:text-gray-600"
             >
-              내상점
+              상품보기
+            </Link>
+            <Link
+              to={`/user/${user.id}`}
+              className="font-presentation text-black text-[15px] font-medium cursor-pointer hover:text-gray-600"
+            >
+              내 상점
             </Link>
             <div className="w-[1px] h-6 bg-gray-300"></div>
             <Link
@@ -83,7 +89,7 @@ const Header = () => {
               onClick={() => setShowLogin(true)}
               className="font-presentation text-black text-[15px] font-medium cursor-pointer hover:text-gray-600"
             >
-              내상점
+              상품보기
             </button>
             <div className="w-[1px] h-6 bg-gray-300"></div>
             <button

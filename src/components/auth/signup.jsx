@@ -42,6 +42,12 @@ const Signup = ({ onClose, onOpenLogin }) => {
     formData.username &&
     formData.password;
 
+  const handleSocialLogin = (provider) => {
+    window.location.href = `${
+      import.meta.env.VITE_API_URL
+    }/oauth2/authorization/${provider}`;
+  };
+
   return (
     <div className="w-[350px]">
       <div>
@@ -62,12 +68,18 @@ const Signup = ({ onClose, onOpenLogin }) => {
             </p>
 
             <div className="font-presentation flex flex-col justify-center items-center gap-[15px] mb-4">
-              <button className="border-1 border-gray-200 w-full h-[40px] rounded-lg text-sm font-bold  flex items-center justify-center gap-[10px]">
+              <button
+                onClick={() => handleSocialLogin("google")}
+                className="cursor-pointer border-1 border-gray-200 w-full h-[40px] rounded-lg text-sm font-bold  flex items-center justify-center gap-[10px]"
+              >
                 <FcGoogle />
                 Continue with Google
               </button>
 
-              <button className="border-1 border-gray-200 w-full h-[40px] rounded-lg text-sm font-bold flex items-center justify-center gap-[10px]">
+              <button
+                onClick={() => handleSocialLogin("github")}
+                className="cursor-pointer border-1 border-gray-200 w-full h-[40px] rounded-lg text-sm font-bold flex items-center justify-center gap-[10px]"
+              >
                 <FaGithub />
                 Continue with Github
               </button>
