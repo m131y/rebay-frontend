@@ -30,7 +30,7 @@ const Header = () => {
       <header className="w-full max-w-full mx-auto h-[110px] bg-white flex items-center justify-between px-[30px] sticky top-0 z-10 border-b border-gray-200 shadow-sm">
         <div className="flex space-x-15">
           <Link to="/">
-            <img src="image-Photoroom.png" alt="ReBay" className="w-30" />
+            <img src="/image-Photoroom.png" alt="ReBay" className="w-30" />
           </Link>
 
           <form className="flex items-center">
@@ -55,10 +55,16 @@ const Header = () => {
               판매하기
             </Link>
             <Link
-              to="/"
+              to="/products"
               className="font-presentation text-black text-[15px] font-medium cursor-pointer hover:text-gray-600"
             >
-              내상점
+              상품보기
+            </Link>
+            <Link
+              to={`/user/${user.id}`}
+              className="font-presentation text-black text-[15px] font-medium cursor-pointer hover:text-gray-600"
+            >
+              내 상점
             </Link>
             <div className="w-[1px] h-6 bg-gray-300"></div>
             <Link
@@ -83,7 +89,7 @@ const Header = () => {
               onClick={() => setShowLogin(true)}
               className="font-presentation text-black text-[15px] font-medium cursor-pointer hover:text-gray-600"
             >
-              내상점
+              상품보기
             </button>
             <div className="w-[1px] h-6 bg-gray-300"></div>
             <button
