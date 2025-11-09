@@ -1,58 +1,78 @@
+import { useEffect, useState } from "react";
 import { FaImage } from "react-icons/fa";
+import api from "../../services/api";
 
-const Product = ({ title, price, desc, variant = "default" }) => {
-  const variants = {
-    sm: {
-      wrapper: "w-[90px] h-[160px] ",
-      imageHeight: "h-[90px]",
-      titleText: "text-sm",
-      priceText: "text-xs font-semibold",
-      descText: "text-[10px]",
-      iconSize: 40,
-    },
-    default: {
-      wrapper: "w-[130px] h-[230px] ",
-      imageHeight: "h-[140px]",
-      titleText: "text-[16px]",
-      priceText: "text-[15px] font-semibold",
-      descText: "text-[13px]",
-      iconSize: 70,
-    },
-    lg: {
-      wrapper: "w-[195px] h-[345px] ",
-      imageHeight: "h-[210px]",
-      titleText: "text-xl",
-      priceText: "text-lg font-bold",
-      descText: "text-sm",
-      iconSize: 100,
-    },
-  };
+const PriceFormat = (value) =>
+  value == null
+    ? ""
+    : new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
+        Number(value)
+      );
 
-  const currentStyle = variants[variant] || variants.default;
+const Product = ({ post, onClick }) => {
+  const [signedUrl, setSignedUrl] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadImage = async () => {
+      try {
+        const fileKey = post?.imageUrl || "";
+        if (!fileKey) {
+          if (!cancelled) setSignedUrl("");
+          return;
+        }
+
+        const res = await api.get(
+          `/api/upload/post/image?url=${encodeURIComponent(fileKey)}`
+        );
+        const url = res?.data?.imageUrl || "";
+        if (!cancelled) setSignedUrl(url);
+      } catch (err) {
+        console.error("[product] presigned fetch failed:", err);
+        if (!cancelled) setSignedUrl("");
+      }
+    };
+
+    loadImage();
+    return () => {
+      cancelled = true;
+    };
+  }, [post]);
 
   return (
-    <div className={`${currentStyle.wrapper}`}>
-      <div className="w-full h-full border border-gray-200 rounded-sm">
-        <div
-          className={`w-auto ${currentStyle.imageHeight} bg-gray-300 m-2 flex items-center justify-center`}
-        >
-          <FaImage
-            size={`${currentStyle.iconSize}`}
-            className=" text-rebaygray-100"
-          />
+    <div className="w-[190px] h-[320px]">
+      <button
+        type="button"
+        onClick={onClick}
+        className="w-full h-full border border-gray-200 rounded-[12px] bg-white hover:shadow-sm transition text-left"
+      >
+        <div className="m-3 h-[200px] bg-gray-100 rounded-[10px] overflow-hidden flex items-center justify-center">
+          {signedUrl ? (
+            <img
+              src={signedUrl}
+              alt={post?.title || "상품"}
+              className="w-full h-full object-cover"
+              loading="lazy"
+              onError={() => setSignedUrl("")}
+            />
+          ) : (
+            <FaImage size={72} className="text-rebaygray-100" />
+          )}
         </div>
-        <div className="m-2">
-          <div className={`font-presentation ${currentStyle.titleText}`}>
-            {title}
+
+        <div className="mx-3 mb-3">
+          <div className="font-presentation text-[16px] font-semibold leading-snug line-clamp-1">
+            {post?.title}
           </div>
-          <div className={`font-presentation ${currentStyle.priceText}`}>
-            {price}
+          <div className="font-presentation text-[14px] font-semibold mt-1">
+            {post?.price != null ? `${PriceFormat(post.price)}원` : ""}
           </div>
-          <div className={`font-presentation ${currentStyle.descText}`}>
-            {desc}
+          <div className="font-presentation text-[12px] text-gray-500 mt-1 line-clamp-2">
+            {post?.content}
           </div>
         </div>
-      </div>
+      </button>
     </div>
   );
 };

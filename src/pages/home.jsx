@@ -3,6 +3,7 @@ import Footer from "../components/layout/Footer";
 import Header from "../components/layout/Header";
 import MainLayout from "../components/layout/MainLayout";
 import Product from "../components/products/product";
+import { Link } from "react-router-dom";
 
 const Home = () => {
   return (
@@ -20,11 +21,14 @@ const Home = () => {
                   단 하나뿐인 기회를 ReBay에서 잡으세요
                 </p>
               </div>
-              <button className="w-[150px] h-[50px] bg-rebay-blue rounded-lg">
-                <div className="font-presentation text-white text-[15px]">
+              <Link
+                to="/sell"
+                className="w-[150px] h-[50px] bg-rebay-blue rounded-lg flex items-center justify-center"
+              >
+                <span className="font-presentation text-white text-[15px]">
                   지금 판매하기
-                </div>
-              </button>
+                </span>
+              </Link>
             </div>
 
             <div className="w-full">
