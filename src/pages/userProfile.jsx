@@ -7,6 +7,7 @@ import useAuthStore from "../store/authStore";
 import useUserStore from "../store/userStore";
 import { useEffect, useState } from "react";
 import Product from "../components/products/product";
+import ReviewList from "../review/reviewList";
 
 const UserProfile = () => {
   const { targetUserId } = useParams();
@@ -156,16 +157,7 @@ const UserProfile = () => {
                 </section>
               )}
 
-              {showReview && (
-                <section className="mt-[20px] w-full h-[700px] flex flex-col items-center justify-start space-y-5 mx-auto">
-                  <div className="w-full h-auto">
-                    <div className="grid grid-cols-5 gap-[10px]">
-                      <Product />
-                      <Product />
-                    </div>
-                  </div>
-                </section>
-              )}
+              {showReview && <ReviewList user={userProfile} />}
             </div>
           </main>
           <Footer />

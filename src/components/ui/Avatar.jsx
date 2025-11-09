@@ -22,7 +22,7 @@ const Avatar = ({ user, size = "" }) => {
 
   return (
     <div
-      className={`flex items-center justify-center border-5 border-gray-300 rounded-full ${size}`}
+      className={`flex aspect-square items-center justify-center border-5 border-gray-300 rounded-full ${size}`}
     >
       <img src={imageUrl} className="rounded-full w-full" />
     </div>

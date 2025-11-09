@@ -59,7 +59,7 @@ const Login = ({ onClose, onOpenSignup }) => {
             <div className="px-12 py-5">
               <h1 className="flex items-center justify-center">
                 <img
-                  src="image-Photoroom.png"
+                  src="/image-Photoroom.png"
                   alt="ReBay"
                   className="w-25 mb-8"
                 />
