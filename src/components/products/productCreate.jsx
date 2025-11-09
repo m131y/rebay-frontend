@@ -1,4 +1,3 @@
-// src/components/product/ProductCreate.jsx
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import postService from "../../services/post";
@@ -136,7 +135,7 @@ const ProductCreate = ({
 
     resetForm();
     if (typeof goBack === "function") goBack();
-    else navigate("/"); // 메인으로 이동
+    else navigate("/");
   };
 
   const onSubmit = async (e) => {
@@ -158,7 +157,7 @@ const ProductCreate = ({
       onCreated?.(data);
 
       resetForm();
-      navigate("/"); // 등록 후 메인으로 이동
+      navigate("/");
     } catch (err) {
       setError(err?.response?.data?.message || err.message || "등록 실패");
     } finally {
@@ -181,7 +180,6 @@ const ProductCreate = ({
       </div>
 
       <form onSubmit={onSubmit} className="space-y-8">
-        {/* 이미지 */}
         <section>
           <label className="block text-sm font-medium mb-2">상품이미지</label>
 
@@ -246,7 +244,6 @@ const ProductCreate = ({
           )}
         </section>
 
-        {/* 제목 */}
         <section>
           <label className="block text-sm font-medium mb-2">상품명</label>
           <div className="relative">
@@ -265,7 +262,6 @@ const ProductCreate = ({
           </div>
         </section>
 
-        {/* 카테고리 */}
         <section ref={catRef}>
           <label className="block text-sm font-medium mb-2">카테고리</label>
 
@@ -320,7 +316,6 @@ const ProductCreate = ({
           )}
         </section>
 
-        {/* 가격 */}
         <section>
           <label className="block text-sm font-medium mb-2">가격(원)</label>
           <input
@@ -336,7 +331,6 @@ const ProductCreate = ({
           />
         </section>
 
-        {/* 설명 */}
         <section>
           <label className="block text-sm font-medium mb-2">설명</label>
           <textarea
@@ -350,7 +344,6 @@ const ProductCreate = ({
           />
         </section>
 
-        {/* 해시태그 */}
         <section>
           <label className="block text-sm font-medium mb-2">해시태그</label>
           <input
@@ -371,7 +364,6 @@ const ProductCreate = ({
           </div>
         </section>
 
-        {/* 하단 버튼: 취소 + 등록하기 */}
         <section className="flex items-center justify-end gap-3 pt-2">
           <button
             type="button"
