@@ -1,9 +1,9 @@
-import { FaImage } from "react-icons/fa";
 import Footer from "../components/layout/Footer";
 import Header from "../components/layout/Header";
 import MainLayout from "../components/layout/MainLayout";
 import Product from "../components/products/product";
 import { Link } from "react-router-dom";
+import ImageSlider from "../components/ui/imageSlider";
 
 const Home = () => {
   return (
@@ -23,25 +23,18 @@ const Home = () => {
               </div>
               <Link
                 to="/sell"
-                className="w-[150px] h-[50px] bg-rebay-blue rounded-lg flex items-center justify-center"
+                className="cursor-pointer w-[150px] h-[50px] shadow-sm hover:shadow-lg bg-rebay-blue  transition-all duration-200 hover:opacity-90 rounded-lg flex items-center justify-center"
               >
                 <span className="font-presentation text-white text-[15px]">
                   지금 판매하기
                 </span>
               </Link>
             </div>
-
-            <div className="w-full">
-              <div className="w-full h-[300px] rounded-[7.2px] bg-rebay-gradient flex justify-center items-center">
-                <div className="text-white text-[72px] font-extrabold opacity-70">
-                  ReBay
-                </div>
-              </div>
-            </div>
+            {<ImageSlider />}
           </section>
 
           <section className="w-[690px] h-[200px] flex flex-col items-start space-y-5 mx-auto">
-            <h2 className="font-presentation text-black text-[30px] font-extrabold tracking-[-0.02em] mt-[56.7px]">
+            <h2 className="font-presentation text-black text-[30px] font-extrabold tracking-[-0.02em] mt-[30px]">
               카테고리 별 상품
             </h2>
 

@@ -82,6 +82,7 @@ const Login = ({ onClose, onOpenSignup }) => {
                   type="password"
                   name="password"
                   placeholder="Password"
+                  minlength="6"
                   value={formData.password}
                   onChange={handleChange}
                   required

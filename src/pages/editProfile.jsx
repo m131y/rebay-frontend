@@ -91,6 +91,7 @@ const EditProfile = () => {
       alert("프로필 정보가 성공적으로 저장되었습니다.");
     } catch (error) {
       alert("프로필 저장에 실패했습니다.");
+      alert(error);
     } finally {
       setIsSaving(false);
     }
@@ -126,8 +127,6 @@ const EditProfile = () => {
                   )}
                 </div>
                 <div className="font-presentation space-y-4 text-2xl flex w-full flex-col items-center ">
-                  {error && <p className="text-error">{error}</p>}
-
                   <div className="flex w-full items-center">
                     <label
                       htmlFor="username"
@@ -139,6 +138,7 @@ const EditProfile = () => {
                       id="username"
                       name="username"
                       value={formData.username}
+                      minlength="2"
                       onChange={handleChange}
                       className="text-xl"
                       placeholder={userProfile.username}

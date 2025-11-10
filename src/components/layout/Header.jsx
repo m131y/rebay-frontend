@@ -35,14 +35,14 @@ const Header = () => {
 
           <form className="flex items-center">
             <div className="flex items-center bg-rebay-search w-[400px] h-[40px] px-[20px] rounded-full">
-              <FaBars className="mr-[10px] text-rebaygray-200" />
+              <FaBars className="mr-[10px] text-rebay-gray-300" />
               <input
                 type="search"
                 name="q"
                 placeholder="검색어를 입력하세요"
                 className="font-presentation w-[300px] "
               />
-              <FaSearch className="ml-[10px] text-rebaygray-200" />
+              <FaSearch className="ml-[10px] text-rebay-gray-300" />
             </div>
           </form>
         </div>

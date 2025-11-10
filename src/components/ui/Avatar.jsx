@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import s3Service from "../../services/s3";
+import { useNavigate } from "react-router-dom";
 
 const Avatar = ({ user, size = "" }) => {
+  const navigate = useNavigate();
   const [imageUrl, setImageUrl] = useState("");
 
   useEffect(() => {
@@ -22,7 +24,11 @@ const Avatar = ({ user, size = "" }) => {
 
   return (
     <div
-      className={`flex aspect-square items-center justify-center border-5 border-gray-300 rounded-full ${size}`}
+      onClick={() => {
+        navigate(`/user/${user.id}`);
+        window.location.reload();
+      }}
+      className={`cursor-pointer flex aspect-square items-center justify-center border-3 shadow border-rebay-gray-200 rounded-full ${size}`}
     >
       <img src={imageUrl} className="rounded-full w-full" />
     </div>

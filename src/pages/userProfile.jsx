@@ -7,7 +7,8 @@ import useAuthStore from "../store/authStore";
 import useUserStore from "../store/userStore";
 import { useEffect, useState } from "react";
 import Product from "../components/products/product";
-import ReviewList from "../review/reviewList";
+import ReviewList from "../components/review/reviewList";
+import CreateReview from "../components/review/createReview";
 
 const UserProfile = () => {
   const { targetUserId } = useParams();
@@ -79,7 +80,7 @@ const UserProfile = () => {
         <MainLayout>
           <Header />
           <main className="w-full flex-grow flex flex-col items-center mt-[70px] py-10">
-            <div className="font-presentation flex justify-between items-center w-[990px]">
+            <div className="font-presentation flex justify-between w-[990px]">
               <div className="flex items-center">
                 <Avatar user={userProfile} size="size-[150px]" />
                 <div className="ml-10 ">
@@ -99,18 +100,20 @@ const UserProfile = () => {
                 </div>
               </div>
 
-              {isOwnProfile ? (
-                <button
-                  onClick={() => navigate(`/user/${userProfile.id}/edit`)}
-                  className="cursor-pointer w-[120px] h-[40px] rounded-xl bg-gray-300"
-                >
-                  edit
-                </button>
-              ) : (
-                <button className="cursor-pointer w-[120px] h-[40px] rounded-xl text-white bg-rebay-blue">
-                  follow +
-                </button>
-              )}
+              <div className="mt-[20px]">
+                {isOwnProfile ? (
+                  <button
+                    onClick={() => navigate(`/user/${userProfile.id}/edit`)}
+                    className="cursor-pointer w-[120px] h-[40px] rounded-xl shadow-sm hover:shadow-lg font-bold bg-rebay-gray-300 transition-all  duration-200 hover-bg-rebay-gray-300"
+                  >
+                    edit
+                  </button>
+                ) : (
+                  <button className="cursor-pointer w-[120px] h-[40px] rounded-xl shadow-sm hover:shadow-lg font-bold text-white bg-rebay-blue transition-all  duration-200 hover:opacity-90">
+                    follow +
+                  </button>
+                )}
+              </div>
             </div>
             <div className="w-[1400px]">
               <div class="p-[0.5px] bg-gradient-to-r from-white via-gray-400 to-white w-full md:w-3/4 mx-auto my-8">
@@ -126,8 +129,10 @@ const UserProfile = () => {
                   <button
                     key={item.id}
                     onClick={() => handleTabChange(item.id)}
-                    className={`cursor-pointer w-full flex justify-center items-center  border-b-5 border-gray-200 h-[60px] transition-colors ${
-                      isActive ? "text-black" : "text-gray-500"
+                    className={`cursor-pointer w-full flex justify-center items-center shadow-bottom border-b-3  border-rebay-gray-300 mb-[20px] h-[60px] transition-colors ${
+                      isActive
+                        ? "text-black border-rebay-gray-500 transition-all"
+                        : "text-gray-500"
                     }`}
                     aria-label={item.label}
                   >

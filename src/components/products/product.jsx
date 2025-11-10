@@ -47,7 +47,7 @@ const Product = ({ post, onClick }) => {
         onClick={onClick}
         className="w-full h-full border border-gray-200 rounded-[12px] bg-white hover:shadow-sm transition text-left"
       >
-        <div className="m-3 h-[200px] bg-gray-100 rounded-[10px] overflow-hidden flex items-center justify-center">
+        <div className="m-3 h-[200px] bg-gray-200 rounded-[10px] overflow-hidden flex items-center justify-center">
           {signedUrl ? (
             <img
               src={signedUrl}
@@ -57,7 +57,7 @@ const Product = ({ post, onClick }) => {
               onError={() => setSignedUrl("")}
             />
           ) : (
-            <FaImage size={72} className="text-rebaygray-100" />
+            <FaImage size={72} className="text-rebay-gray-300" />
           )}
         </div>
 

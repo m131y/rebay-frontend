@@ -4,7 +4,7 @@ import { BsStar, BsStarFill } from "react-icons/bs";
 import useReviewStore from "../../store/reviewStore";
 import { useEffect, useMemo, useState } from "react";
 
-const CreateReview = ({ transactionId = 5, onClose }) => {
+const CreateReview = ({ transactionId = 7, onClose }) => {
   const { createReview, loading, error } = useReviewStore();
 
   const [formData, setFormData] = useState({
@@ -24,7 +24,6 @@ const CreateReview = ({ transactionId = 5, onClose }) => {
       onClose();
     } catch (error) {
       alert(`후기 등록에 실패하였습니다.`);
-      window.location.reload();
     }
   };
 

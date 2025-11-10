@@ -134,6 +134,60 @@
   .bg-rebay-search {
     background-color: #e8f2f5;
   }
+  .bg-rebay-gray-100 {
+    background-color: #ededed; /* 가장 밝은 회색 */
+  }
+  .bg-rebay-gray-200 {
+    background-color: #e0e0e0;
+  }
+  .bg-rebay-gray-300 {
+    background-color: #c7c7cc;
+  }
+  .bg-rebay-gray-400 {
+    background-color: #aeaeb2;
+  }
+  .bg-rebay-gray-500 {
+    background-color: #8e8e93; /* 중간 회색 */
+  }
+  .bg-rebay-gray-600 {
+    background-color: #737373;
+  }
+  .bg-rebay-gray-700 {
+    background-color: #4f4f4f; /* 가장 어두운 회색 */
+  }
+
+  /* --- Rebay Gray Hover 효과 (hover:bg-XXX 처럼 동작) --- */
+  /* (Hover 시 한 단계 더 어두운 색상으로 변경되도록 정의) */
+
+  /* 100 -> 200 */
+  .hover-bg-rebay-gray-100:hover {
+    background-color: #e0e0e0;
+  }
+
+  /* 200 -> 300 */
+  .hover-bg-rebay-gray-200:hover {
+    background-color: #c7c7cc;
+  }
+
+  /* 300 -> 400 */
+  .hover-bg-rebay-gray-300:hover {
+    background-color: #aeaeb2;
+  }
+
+  /* 400 -> 500 */
+  .hover-bg-rebay-gray-400:hover {
+    background-color: #8e8e93;
+  }
+
+  /* 500 -> 600 */
+  .hover-bg-rebay-gray-500:hover {
+    background-color: #737373;
+  }
+
+  /* 600 -> 700 */
+  .hover-bg-rebay-gray-600:hover {
+    background-color: #4f4f4f;
+  }
 
   /* 텍스트 색상 클래스 (text-[이름]) */
   .text-rebay-blue {
@@ -142,14 +196,26 @@
   .text-rebay-green {
     color: #33b267;
   }
-  .text-rebaygray-300 {
-    color: #49454f;
+  .text-rebay-gray-100 {
+    color: #ededed; /* 가장 밝은 회색 */
   }
-  .text-rebaygray-200 {
-    color: #807c87;
+  .text-rebay-gray-200 {
+    color: #e0e0e0;
   }
-  .text-rebaygray-100 {
-    color: #989ba2;
+  .text-rebay-gray-300 {
+    color: #c7c7cc;
+  }
+  .text-rebay-gray-400 {
+    color: #aeaeb2;
+  }
+  .text-rebay-gray-500 {
+    color: #8e8e93; /* 중간 회색 */
+  }
+  .text-rebay-gray-600 {
+    color: #737373;
+  }
+  .text-rebay-gray-700 {
+    color: #4f4f4f; /* 가장 어두운 회색 */
   }
 
   .bg-rebay-gradient {
@@ -163,5 +229,43 @@
       #33b267,
       #faebdc
     );
+  }
+
+  /* 외곽선 클래스 (border-[이름]) */
+  .border-rebay-blue {
+    border-color: #0761b4;
+  }
+  .border-rebay-green {
+    border-color: #33b267;
+  }
+  .border-rebay-search {
+    border-color: #e8f2f5;
+  }
+  .border-rebay-gray-100 {
+    border-color: #ededed; /* 가장 밝은 회색 */
+  }
+  .border-rebay-gray-200 {
+    border-color: #e0e0e0;
+  }
+  .border-rebay-gray-300 {
+    border-color: #c7c7cc;
+  }
+  .border-rebay-gray-400 {
+    border-color: #aeaeb2;
+  }
+  .border-rebay-gray-500 {
+    border-color: #8e8e93; /* 중간 회색 */
+  }
+  .border-rebay-gray-600 {
+    border-color: #737373;
+  }
+  .border-rebay-gray-700 {
+    border-color: #4f4f4f; /* 가장 어두운 회색 */
+  }
+
+  /* 그림자 */
+  .shadow-bottom {
+    /* X 오프셋 0, Y 오프셋 4px, 블러 6px, 스프레드 -1px, 색상 및 투명도 */
+    box-shadow: 0 8px 6px -6px rgba(0, 0, 0, 0.1);
   }
 }

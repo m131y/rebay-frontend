@@ -1,4 +1,8 @@
+import { Link } from "react-router-dom";
+import useAuthStore from "../../store/authStore";
+
 const Footer = () => {
+  const { user } = useAuthStore();
   return (
     <footer className="w-full bg-white">
       <div className="w-full max-w-full mx-auto px-[60px] relative">
@@ -40,9 +44,12 @@ const Footer = () => {
             </div>
 
             <div className="w-[140.25px] flex flex-col gap-[18px] items-end justify-start text-right">
-              <div className="font-presentation text-black text-[12px] font-medium leading-[150%]">
+              <Link
+                to={`/user/${user?.id}`}
+                className="font-presentation text-black text-[12px] font-medium leading-[150%]"
+              >
                 마이페이지
-              </div>
+              </Link>
               <div className="font-presentation text-[#454545] text-[12px] font-medium leading-[150%] cursor-pointer hover:text-black">
                 페이지
               </div>

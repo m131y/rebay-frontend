@@ -114,6 +114,7 @@ const Signup = ({ onClose, onOpenLogin }) => {
                   name="username"
                   placeholder="Username"
                   value={formData.username}
+                  minlength="2"
                   onChange={handleChange}
                   required
                 />
@@ -123,6 +124,7 @@ const Signup = ({ onClose, onOpenLogin }) => {
                   name="password"
                   placeholder="Password"
                   value={formData.password}
+                  minlength="6"
                   onChange={handleChange}
                   required
                 />

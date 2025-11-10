@@ -73,6 +73,7 @@ const EditPassword = ({ onClose }) => {
                   name="currentPassword"
                   placeholder="현재 비밀번호를 입력해주세요"
                   value={passwordData.currentPassword}
+                  minlength="6"
                   onChange={handleChange}
                   required
                 />
@@ -82,6 +83,7 @@ const EditPassword = ({ onClose }) => {
                   name="newPassword"
                   placeholder="새 비밀번호를 입력해주세요"
                   value={passwordData.newPassword}
+                  minlength="6"
                   onChange={handleChange}
                   required
                 />
@@ -91,6 +93,7 @@ const EditPassword = ({ onClose }) => {
                   name="confirmPassword"
                   placeholder="새 비밀번호를 한번 더 입력해주세요"
                   value={passwordData.confirmPassword}
+                  minlength="6"
                   onChange={handleChange}
                   required
                 />

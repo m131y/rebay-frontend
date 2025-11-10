@@ -1,4 +1,4 @@
-import Avatar from "../components/ui/Avatar";
+import Avatar from "../ui/Avatar";
 import { BsStar, BsStarFill } from "react-icons/bs";
 
 const ReviewCard = ({ review }) => {
@@ -19,9 +19,9 @@ const ReviewCard = ({ review }) => {
   const stars = [];
   for (let i = 1; i <= 5; i++) {
     if (i <= numericRating) {
-      stars.push(<BsStarFill key={i} size={20} />);
+      stars.push(<BsStarFill key={i} size={20} color="#ffc107" />);
     } else {
-      stars.push(<BsStar key={i} size={20} />);
+      stars.push(<BsStar key={i} size={20} color="#e4e5e9" />);
     }
   }
 
