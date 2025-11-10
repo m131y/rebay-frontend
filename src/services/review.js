@@ -12,6 +12,12 @@ const reviewService = {
     console.log("reviewService:", response.data);
     return response.data;
   },
+
+  async getReviewsCountByUser(sellerId) {
+    const response = await api.get(`api/review/counts/${sellerId}`);
+    console.log("reviewService:", response.data);
+    return response.data;
+  },
 };
 
 export default reviewService;

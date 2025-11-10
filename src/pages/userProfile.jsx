@@ -9,11 +9,13 @@ import { useEffect, useState } from "react";
 import Product from "../components/products/product";
 import ReviewList from "../components/review/reviewList";
 import CreateReview from "../components/review/createReview";
+import useReviewStore from "../store/reviewStore";
 
 const UserProfile = () => {
   const { targetUserId } = useParams();
   const { user } = useAuthStore();
   const { userProfile, getUserProfile } = useUserStore();
+  const { getReviewsCountByUser } = useReviewStore();
   const navigate = useNavigate();
 
   const navItems = [
@@ -28,6 +30,13 @@ const UserProfile = () => {
   const [showReview, setShowReview] = useState(false);
   const [showFollower, setShowFollower] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
+
+  const [tabCounts, setTabCounts] = useState({
+    product: 0,
+    review: 0,
+    follower: 0,
+    following: 0,
+  });
 
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
@@ -71,6 +80,17 @@ const UserProfile = () => {
     };
     loadUserProfile();
   }, [getUserProfile, targetUserId]);
+
+  useEffect(() => {
+    const loadTapDetails = async () => {
+      try {
+        setTabCounts(await getReviewsCountByUser(targetUserId));
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadTapDetails();
+  }, [activeTab, targetUserId, getReviewsCountByUser]);
 
   const isOwnProfile = userProfile?.id === user?.id;
 
@@ -137,6 +157,8 @@ const UserProfile = () => {
                     aria-label={item.label}
                   >
                     {item.label}
+                    {tabCounts[`${item.id}`]}
+                    {/* 현재 후기 갯수만 조회 */}
                   </button>
                 );
               })}
