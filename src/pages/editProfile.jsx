@@ -1,10 +1,4 @@
-import {
-  FiAtSign,
-  FiPlus,
-  FiSave,
-  FiToggleLeft,
-  FiToggleRight,
-} from "react-icons/fi";
+import { FiPlus, FiSave } from "react-icons/fi";
 import Footer from "../components/layout/Footer";
 import Header from "../components/layout/Header";
 import MainLayout from "../components/layout/MainLayout";
@@ -16,7 +10,6 @@ import useAuthStore from "../store/authStore";
 import { useEffect, useState } from "react";
 import EditPassword from "../components/auth/editPassword";
 import FileUpload from "../components/file/fileUpload";
-import s3Service from "../services/s3";
 
 const EditProfile = () => {
   const { targetUserId } = useParams();
@@ -69,6 +62,7 @@ const EditProfile = () => {
 
   const handleToggleEnabled = () => {
     setFormData((prev) => ({ ...prev, enabled: !prev.enabled }));
+    console.log(formData);
   };
 
   const handleFileUploadClose = (newImageUrl) => {
@@ -126,7 +120,41 @@ const EditProfile = () => {
                     </>
                   )}
                 </div>
-                <div className="font-presentation space-y-4 text-2xl flex w-full flex-col items-center ">
+                <div className="font-presentation space-y-4 text-2xl flex w-full md:w-3/5 flex-col items-stretch md:items-end ">
+                  <div className="flex w-full items-center justify-end mb-4">
+                    <span className="text-xl text-gray-700 font-semibold mr-4">
+                      계정 활성화:
+                    </span>
+                    <label
+                      htmlFor="enabled-toggle"
+                      className="flex items-center cursor-pointer"
+                    >
+                      <input
+                        id="enabled-toggle"
+                        type="checkbox"
+                        className="sr-only"
+                        checked={formData.enabled}
+                        onChange={handleToggleEnabled}
+                      />
+                      <div
+                        className={`
+                          relative w-16 h-8 rounded-full shadow-inner transition-colors duration-300
+                          ${formData.enabled ? "bg-green-500" : "bg-gray-300"}
+                        `}
+                      >
+                        <div
+                          className={`
+                            absolute left-1 top-1 w-6 h-6 bg-white rounded-full transition-transform duration-300 shadow-md
+                            ${
+                              formData.enabled
+                                ? "transform translate-x-8"
+                                : "transform translate-x-0"
+                            }
+                          `}
+                        ></div>
+                      </div>
+                    </label>
+                  </div>
                   <div className="flex w-full items-center">
                     <label
                       htmlFor="username"

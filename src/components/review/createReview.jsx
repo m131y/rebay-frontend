@@ -4,13 +4,12 @@ import { BsStar, BsStarFill } from "react-icons/bs";
 import useReviewStore from "../../store/reviewStore";
 import { useEffect, useMemo, useState } from "react";
 
-const CreateReview = ({ transactionId = 7, onClose }) => {
-  const { createReview, loading, error } = useReviewStore();
+const CreateReview = ({ review, transactionId = 10, onClose }) => {
+  const { createReview, updateReview, loading, error } = useReviewStore();
 
   const [formData, setFormData] = useState({
-    content: "",
-    rating: "",
-    ratingCount: 0,
+    content: review?.content ? review?.content : "",
+    rating: review?.rating ? review?.rating : "",
   });
 
   const stars = [1, 2, 3, 4, 5];
@@ -18,10 +17,15 @@ const CreateReview = ({ transactionId = 7, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const data = { content: formData.content, rating: formData.rating };
-      await createReview(transactionId, data);
-      alert(`성공적으로 등록되었습니다.`);
-      onClose();
+      if (review) {
+        await updateReview(review.id, formData);
+        alert(`성공적으로 수정되었습니다.`);
+        onClose();
+      } else {
+        await createReview(transactionId, formData);
+        alert(`성공적으로 등록되었습니다.`);
+        onClose();
+      }
     } catch (error) {
       alert(`후기 등록에 실패하였습니다.`);
     }
@@ -35,23 +39,14 @@ const CreateReview = ({ transactionId = 7, onClose }) => {
   };
 
   const handleRating = (count) => {
-    const ratingMap = {
-      1: "ONE",
-      2: "TWO",
-      3: "THREE",
-      4: "FOUR",
-      5: "FIVE",
-    };
-
     setFormData((prevFormData) => ({
       ...prevFormData,
-      rating: ratingMap[count],
-      ratingCount: count,
+      rating: count,
     }));
   };
 
   const starElements = useMemo(() => {
-    const currentCount = formData.ratingCount || 0;
+    const currentCount = formData.rating || 0;
     return stars.map((index) => (
       <span
         key={index}
@@ -65,7 +60,7 @@ const CreateReview = ({ transactionId = 7, onClose }) => {
         )}
       </span>
     ));
-  }, [formData.ratingCount]);
+  }, [formData.rating]);
 
   return (
     <div>
