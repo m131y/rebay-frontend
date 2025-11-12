@@ -8,11 +8,8 @@ import EditProfile from "./pages/editProfile";
 import SamplePage from "./pages/samplePage";
 import Products from "./pages/products";
 import ProductCreate from "./components/products/productCreate";
-<<<<<<< HEAD
-import UserProduct from "./pages/userProduct";
-=======
 import CreateReview from "./components/review/createReview";
->>>>>>> develop
+import UserProduct from "./pages/userProduct";
 
 const App = () => {
   return (
@@ -27,11 +24,8 @@ const App = () => {
         <Route path="/user/:targetUserId/edit" element={<EditProfile />} />
         <Route path="/products" element={<Products />} />
         <Route path="/sell" element={<ProductCreate />} />
-<<<<<<< HEAD
-        <Route path="/products/:postId" element={<UserProduct />} />
-=======
         <Route path="/createreview" element={<CreateReview />} />
->>>>>>> develop
+        <Route path="/products/:postId" element={<UserProduct />} />
       </Routes>
     </BrowserRouter>
   );
