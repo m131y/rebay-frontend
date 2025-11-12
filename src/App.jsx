@@ -8,6 +8,7 @@ import EditProfile from "./pages/editProfile";
 import SamplePage from "./pages/samplePage";
 import Products from "./pages/products";
 import ProductCreate from "./components/products/productCreate";
+import UserProduct from "./pages/userProduct";
 
 const App = () => {
   return (
@@ -22,6 +23,7 @@ const App = () => {
         <Route path="/user/:targetUserId/edit" element={<EditProfile />} />
         <Route path="/products" element={<Products />} />
         <Route path="/sell" element={<ProductCreate />} />
+        <Route path="/products/:postId" element={<UserProduct />} />
       </Routes>
     </BrowserRouter>
   );

@@ -23,6 +23,11 @@ const postService = {
     return response.data.count;
   },
 
+  getPost: async (postId) => {
+    const res = await api.get(`/api/posts/${postId}`); // 서버에서 view +1
+    return res.data;
+  },
+
   updatePost: async (postId, postData) => {
     const response = await api.put(`/api/posts/${postId}`, postData);
     return response.data;

@@ -1,4 +1,3 @@
-// src/pages/products.jsx
 import { useEffect, useMemo, useState } from "react";
 import Footer from "../components/layout/Footer";
 import Header from "../components/layout/Header";
@@ -6,7 +5,6 @@ import MainLayout from "../components/layout/MainLayout";
 import Product from "../components/products/product";
 import postService from "../services/post";
 
-/** 백엔드 enum과 매칭 */
 const CATEGORY_OPTIONS = [
   { value: "ALL", label: "전체" },
   { value: "DIGITAL_DEVICES", label: "가전/디지털" },
@@ -26,21 +24,17 @@ const SORTS = {
   TITLE_ASC: "TITLE_ASC",
 };
 
-const PAGE_SIZE = 10; // 백엔드 기본 size와 동일하게 사용 (컨트롤러 기본값 10)
+const PAGE_SIZE = 10;
 
 const Products = () => {
-  /** 원본 전체목록(모든 페이지) */
   const [allPosts, setAllPosts] = useState([]);
-  /** UI 상태 */
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  /** 필터/정렬/페이지 */
   const [category, setCategory] = useState("ALL");
   const [sort, setSort] = useState(SORTS.LATEST);
   const [page, setPage] = useState(1);
 
-  /** 최초에 전체 페이지를 다 불러오기 (백엔드 페이지 수 모름 → 빈 배열 반환 시 종료) */
   useEffect(() => {
     (async () => {
       try {
@@ -50,13 +44,7 @@ const Products = () => {
         const merged = [];
         let p = 0;
 
-        // postService는 content만 반환하므로, 콘텐츠가 0이 될 때까지 순회
-        // (백엔드 PageRequest 넘어선 페이지는 빈 content를 반환)
-        // size는 백엔드 기본(10)을 쓰려면 undefined로 넘겨도 됨. 명시하려면 10 전달.
-        // 여기선 명시적인 가독성을 위해 10 사용.
-        // eslint-disable-next-line no-constant-condition
         while (true) {
-          // NOTE: service 시그니처를 유지하기 위해 size도 같이 보냄
           const content = await postService.getAllPosts(p, PAGE_SIZE);
           if (!content || content.length === 0) break;
           merged.push(...content);
@@ -72,21 +60,17 @@ const Products = () => {
     })();
   }, []);
 
-  /** 정렬/필터가 바뀌면 첫 페이지로 */
   useEffect(() => {
     setPage(1);
   }, [category, sort]);
 
-  /** 필터+정렬 적용된 결과 (모든 페이지 대상) */
   const processed = useMemo(() => {
     let rows = allPosts;
 
-    // 1) 카테고리
     if (category !== "ALL") {
       rows = rows.filter((r) => r?.category === category);
     }
 
-    // 2) 정렬
     const safeNum = (v) => (v == null ? Number.NEGATIVE_INFINITY : Number(v));
     const safeStr = (s) => (s || "").toString();
 
@@ -104,7 +88,6 @@ const Products = () => {
         break;
       case SORTS.LATEST:
       default:
-        // createdAt이 있다면 최신순(내림차순)
         rows = [...rows].sort(
           (a, b) =>
             new Date(b?.createdAt || 0).getTime() -
@@ -116,7 +99,6 @@ const Products = () => {
     return rows;
   }, [allPosts, category, sort]);
 
-  /** 페이지네이션 (클라이언트 측) */
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const paged = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
@@ -131,7 +113,6 @@ const Products = () => {
       <Header />
       <main className="mt-[70px]">
         <section className="mx-auto w-full max-w-[1080px] px-3">
-          {/* 타이틀 + 컨트롤 */}
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-presentation text-[22px] font-bold">
               상품보기
@@ -187,11 +168,9 @@ const Products = () => {
             </div>
           </div>
 
-          {/* 상태 */}
           {loading && <div className="text-gray-500 mb-3">불러오는 중…</div>}
           {error && <div className="text-red-600 mb-3">{error}</div>}
 
-          {/* 목록 */}
           {!loading && processed.length === 0 ? (
             <div className="text-gray-500 py-10">표시할 상품이 없어요.</div>
           ) : (
@@ -202,7 +181,6 @@ const Products = () => {
             </div>
           )}
 
-          {/* 페이지네이션 (총 페이지가 1보다 클 때만 표시) */}
           {totalPages > 1 && (
             <div className="flex items-center justify-center gap-2 mt-6">
               <button
@@ -213,7 +191,6 @@ const Products = () => {
                 이전
               </button>
 
-              {/* 단순 1..N 페이지 버튼 */}
               {Array.from({ length: totalPages }).map((_, i) => {
                 const n = i + 1;
                 return (
