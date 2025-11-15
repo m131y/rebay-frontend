@@ -268,4 +268,28 @@
     /* X 오프셋 0, Y 오프셋 4px, 블러 6px, 스프레드 -1px, 색상 및 투명도 */
     box-shadow: 0 8px 6px -6px rgba(0, 0, 0, 0.1);
   }
+
+  .hide-scrollbar::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+  .hide-scrollbar {
+    -ms-overflow-style: none !important; /* IE and Edge */
+    scrollbar-width: none !important; /* Firefox */
+  }
+
+  /* 커스텀 애니메이션: 1위 랭크 배지 펄스 효과 */
+  @keyframes rank-pulse {
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(99, 102, 241, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 8px rgba(99, 102, 241, 0);
+    }
+  }
+  .rank-pulse-animation {
+    animation: rank-pulse 1.5s infinite;
+  }
 }

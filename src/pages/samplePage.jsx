@@ -6,7 +6,6 @@ const SamplePage = () => {
   return (
     <MainLayout>
       <Header />
-      <main></main>
       <Footer />
     </MainLayout>
   );

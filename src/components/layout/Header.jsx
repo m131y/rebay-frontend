@@ -23,6 +23,7 @@ const Header = () => {
 
   const handleLogout = () => {
     logout();
+    window.location.reload();
   };
 
   return (
@@ -49,7 +50,7 @@ const Header = () => {
         {user ? (
           <nav className="items flex space-x-9 items-center">
             <Link
-              to="/"
+              to="/sell"
               className="font-presentation text-black text-[15px] font-medium cursor-pointer hover:text-gray-600"
             >
               판매하기

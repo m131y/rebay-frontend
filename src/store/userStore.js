@@ -3,6 +3,7 @@ import userService from "../services/user";
 
 const useUserStore = create((set) => ({
   userProfile: null,
+  searchHistory: [],
   loading: false,
   error: null,
 
@@ -46,6 +47,20 @@ const useUserStore = create((set) => ({
     } catch (err) {
       set({
         error: err.response?.data.message || "Failed to update password",
+        loading: false,
+      });
+      throw err;
+    }
+  },
+
+  getSearchHistory: async () => {
+    set({ loading: true, error: null });
+    try {
+      const data = await userService.getSearchHistory();
+      set({ searchHistory: data });
+    } catch (err) {
+      set({
+        error: err.response?.data.message || "Failed to get search history",
         loading: false,
       });
       throw err;

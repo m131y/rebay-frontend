@@ -12,11 +12,13 @@ import useReviewStore from "../store/reviewStore";
 import useStatisticsStore from "../store/statisticsStore";
 import useFollowStore from "../store/followStore";
 import FollowList from "../components/follow/followList";
+import usePostStore from "../store/postStore";
 
 const UserProfile = () => {
   const { targetUserId } = useParams();
 
   const { user } = useAuthStore();
+  const { userPosts, getUserPosts } = usePostStore();
   const { userProfile, getUserProfile } = useUserStore();
   const { getStatisticsByUserProfile } = useStatisticsStore();
   const { followers, following, toggleFollow, getFollowers, getFollowing } =
@@ -89,6 +91,14 @@ const UserProfile = () => {
     getFollowing(userProfile.id);
   };
 
+  const handleProductClick = (post) => {
+    if (!user) {
+      setShowLogin(true);
+    } else {
+      navigate(`/products/${post.id}`);
+    }
+  };
+
   useEffect(() => {
     const loadUserProfile = async () => {
       try {
@@ -109,19 +119,35 @@ const UserProfile = () => {
       }
     };
     loadTapDetails();
-  }, [activeTab, targetUserId, getStatisticsByUserProfile, userProfile]);
+  }, [activeTab, targetUserId, userProfile]);
 
   useEffect(() => {
     const loadFollowList = async () => {
       try {
-        await getFollowers(userProfile.id);
-        await getFollowing(userProfile.id);
+        if (userProfile?.id) {
+          await getFollowers(userProfile.id);
+          await getFollowing(userProfile.id);
+        }
       } catch (err) {
         console.error(err);
       }
     };
     loadFollowList();
   }, [getFollowers, getFollowing, userProfile, tabCounts]);
+
+  useEffect(() => {
+    const loadUserPosts = async () => {
+      try {
+        if (targetUserId) {
+          console.log(targetUserId);
+          await getUserPosts(targetUserId);
+        }
+      } catch (err) {
+        console.error(err);
+      }
+    };
+    loadUserPosts();
+  }, [getUserPosts, tabCounts, targetUserId]);
 
   const isOwnProfile = userProfile?.id === user?.id;
 
@@ -207,21 +233,18 @@ const UserProfile = () => {
               })}
             </div>
 
-            <div className="w-[990px]">
+            <div className="w-[990px] h-auto">
               {showPost && (
-                <section className="mt-[20px] w-full h-[700px] flex flex-col items-center justify-start space-y-5 mx-auto">
+                <section className="mt-[20px] w-full h-auto flex flex-col items-center justify-start space-y-5 mx-auto">
                   <div className="w-full h-auto">
                     <div className="grid grid-cols-5 gap-[10px]">
-                      <Product variant="lg" />
-                      <Product variant="lg" />
-                      <Product variant="lg" />
-                      <Product variant="lg" />
-                      <Product variant="lg" />
-                      <Product variant="lg" />
-                      <Product variant="lg" />
-                      <Product variant="lg" />
-                      <Product variant="lg" />
-                      <Product variant="lg" />
+                      {userPosts.map((post) => (
+                        <Product
+                          key={post.id}
+                          post={post}
+                          onClick={handleProductClick}
+                        />
+                      ))}
                     </div>
                   </div>
                 </section>

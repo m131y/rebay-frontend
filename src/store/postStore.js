@@ -43,11 +43,10 @@ const usePostStore = create((set) => ({
     }
   },
 
-  getUserPosts: async (page = 0, userId) => {
+  getUserPosts: async (userId, page = 0) => {
     set({ loading: true, error: null });
     try {
-      const content = await postService.getUserPosts(page, 10, userId);
-
+      const content = await postService.getUserPosts(page, 20, userId);
       set({
         userPosts: content,
         loading: false,
