@@ -119,7 +119,7 @@ const Products = () => {
             </h2>
             <div className="flex items-center gap-2">
               {/* 카테고리 */}
-              <select
+              {/* <select
                 value={category}
                 onChange={(e) => setCategory(e.target.value)}
                 className="border border-rebay-gray-400 rounded-lg px-3 py-1.5"
@@ -130,7 +130,7 @@ const Products = () => {
                     {c.label}
                   </option>
                 ))}
-              </select>
+              </select> */}
 
               {/* 정렬 */}
               <button

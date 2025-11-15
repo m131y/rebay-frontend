@@ -86,6 +86,7 @@ const useStatisticsStore = create((set) => ({
       set({
         loading: false,
       });
+      console.log("추천", data);
       return data;
     } catch (err) {
       set({
