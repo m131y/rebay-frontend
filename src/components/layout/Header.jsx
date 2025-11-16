@@ -1,15 +1,23 @@
-import { useState } from "react";
+import { useRef, useState, useEffect } from "react";
 import { FaBars, FaSearch } from "react-icons/fa";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import Login from "../auth/login";
 import Signup from "../auth/signup";
 import useAuthStore from "../../store/authStore";
+import useSearchStore from "../../store/searchStore";
 
 const Header = () => {
-  const { user, logout, loading, error } = useAuthStore();
+  const { user, logout } = useAuthStore();
+  const { fetchSuggests, clearSuggests, suggests, searchPosts } =
+    useSearchStore();
+  const navigate = useNavigate();
+  const suggestBoxRef = useRef(null);
 
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+
+  const [keyword, setKeyword] = useState("");
+  const [target, setTarget] = useState("TITLE");
 
   const handleOpenSignup = () => {
     setShowLogin(false);
@@ -26,6 +34,40 @@ const Header = () => {
     window.location.reload();
   };
 
+  const handleSearch = (e) => {
+    e?.preventDefault();
+    if (!keyword.trim()) return;
+
+    searchPosts({ keyword, target, page: 0 });
+
+    navigate(`/search?keyword=${keyword}&target=${target}`);
+
+    clearSuggests();
+  };
+
+  useEffect(() => {
+    if (!keyword.trim()) {
+      clearSuggests();
+      return;
+    }
+
+    const delay = setTimeout(() => {
+      fetchSuggests({ keyword, target });
+    }, 300);
+
+    return () => clearTimeout(delay);
+  }, [keyword, target]);
+
+  useEffect(() => {
+    const handler = (e) => {
+      if (suggestBoxRef.current && !suggestBoxRef.current.contains(e.target)) {
+        clearSuggests();
+      }
+    };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
   return (
     <div>
       <header className="w-full max-w-full mx-auto h-[110px] bg-white flex items-center justify-between px-[30px] sticky top-0 z-10 border-b border-gray-200 shadow-sm">
@@ -34,19 +76,56 @@ const Header = () => {
             <img src="/image-Photoroom.png" alt="ReBay" className="w-30" />
           </Link>
 
-          <form className="flex items-center">
+          <form onSubmit={handleSearch} className="flex items-center relative">
             <div className="flex items-center bg-rebay-search w-[400px] h-[40px] px-[20px] rounded-full">
-              <FaBars className="mr-[10px] text-rebay-gray-300" />
+              <select
+                value={target}
+                onChange={(e) => setTarget(e.target.value)}
+                className="text-gray-600 text-sm mr-[10px] bg-transparent outline-none cursor-pointer"
+              >
+                <option value="TITLE">제목</option>
+                <option value="USERNAME">작성자</option>
+                <option value="HASHTAG">해시태그</option>
+              </select>
+
               <input
                 type="search"
-                name="q"
+                value={keyword}
+                onChange={(e) => setKeyword(e.target.value)}
                 placeholder="검색어를 입력하세요"
-                className="font-presentation w-[300px] "
+                className="font-presentation bg-transparent flex-1 outline-none"
               />
-              <FaSearch className="ml-[10px] text-rebay-gray-300" />
+
+              <FaSearch
+                className="ml-[10px] text-rebay-gray-300 cursor-pointer"
+                onClick={handleSearch}
+              />
             </div>
+
+            {suggests.length > 0 && (
+              <div
+                ref={suggestBoxRef}
+                className="absolute top-full left-0 mt-2 w-[400px] bg-white 
+                shadow-md rounded-xl border border-gray-200 
+                max-h-[250px] overflow-y-auto z-20"
+              >
+                {suggests.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="px-4 py-2 hover:bg-gray-100 cursor-pointer text-sm"
+                    onClick={() => {
+                      setKeyword(item);
+                      handleSearch();
+                    }}
+                  >
+                    {item}
+                  </div>
+                ))}
+              </div>
+            )}
           </form>
         </div>
+
         {user ? (
           <nav className="items flex space-x-9 items-center">
             <Link
@@ -125,4 +204,5 @@ const Header = () => {
     </div>
   );
 };
+
 export default Header;

@@ -10,6 +10,7 @@ import Products from "./pages/products";
 import ProductCreate from "./components/products/productCreate";
 import CreateReview from "./components/review/createReview";
 import UserProduct from "./pages/userProduct";
+import Search from "./pages/Search";
 
 const App = () => {
   return (
@@ -26,6 +27,7 @@ const App = () => {
         <Route path="/sell" element={<ProductCreate />} />
         <Route path="/createreview" element={<CreateReview />} />
         <Route path="/products/:postId" element={<UserProduct />} />
+        <Route path="/search" element={<Search />} />
       </Routes>
     </BrowserRouter>
   );
