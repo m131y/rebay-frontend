@@ -25,6 +25,13 @@ const statisticsService = {
     const response = await api.get(`/api/statistics/personalRecommend`);
     return response.data;
   },
+
+  async getTradeHistory(categoryCode) {
+    const response = await api.get(
+      `/api/statistics/tradeHistory/${categoryCode}`
+    );
+    return response.data;
+  },
 };
 
 export default statisticsService;

@@ -143,7 +143,7 @@ const Home = () => {
                       <span className="inline-block mx-1 ">
                         <CountUp
                           key={animationKey}
-                          endValue={30000}
+                          endValue={userAvgEarnings}
                           duration={1500}
                         />
                       </span>
