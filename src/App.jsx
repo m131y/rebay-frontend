@@ -25,6 +25,7 @@ const App = () => {
         <Route path="/user/:targetUserId/edit" element={<EditProfile />} />
         <Route path="/products" element={<Products />} />
         <Route path="/sell" element={<ProductCreate />} />
+        <Route path="/products/:postId/edit" element={<ProductCreate />} />
         <Route path="/createreview" element={<CreateReview />} />
         <Route path="/products/:postId" element={<UserProduct />} />
         <Route path="/search" element={<Search />} />

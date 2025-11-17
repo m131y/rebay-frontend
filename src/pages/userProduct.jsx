@@ -174,13 +174,39 @@ export default function UserProduct() {
     <MainLayout>
       <Header />
       <div className="max-w-[1100px] mx-auto px-4 py-6 font-presentation">
-        <div className="mb-4">
+        <div className="mb-4 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
             className="cursor-pointer px-3 py-1.5 border border-rebay-gray-400 rounded-lg hover:bg-gray-50"
           >
             ‹ 이전으로
           </button>
+
+          {isOwnProduct && (
+            <div className="pt-1 flex gap-2">
+              <button
+                onClick={() => navigate(`/products/${post.id}/edit`)}
+                className="cursor-pointer inline-flex items-center justify-center rounded-lg border px-4 py-2 hover:bg-gray-100"
+              >
+                수정
+              </button>
+              <button
+                onClick={async () => {
+                  if (!window.confirm("이 상품을 삭제할까요?")) return;
+                  try {
+                    await postService.deletePost(post.id);
+                    navigate("/products");
+                  } catch (e) {
+                    console.error(e);
+                    alert("삭제 실패");
+                  }
+                }}
+                className="cursor-pointer inline-flex items-center justify-center rounded-lg border px-4 py-2 hover:bg-gray-100"
+              >
+                삭제
+              </button>
+            </div>
+          )}
         </div>
 
         {/* 상단 */}

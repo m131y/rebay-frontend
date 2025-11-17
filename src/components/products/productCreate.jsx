@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import postService from "../../services/post";
 import s3Service from "../../services/s3";
 import { FiEdit2, FiImage, FiTrash2 } from "react-icons/fi";
 import MainLayout from "../layout/MainLayout";
 import Header from "../layout/Header";
 import Footer from "../layout/Footer";
+import api from "../../services/api";
 
 const CATEGORY_OPTIONS = [
   "DIGITAL_DEVICES",
@@ -42,6 +43,8 @@ const ProductCreate = ({
   defaultCategory = "DIGITAL_DEVICES",
 }) => {
   const navigate = useNavigate();
+  const { postId } = useParams();
+  const isEdit = Boolean(postId);
 
   const [form, setForm] = useState({
     title: "",
@@ -61,6 +64,39 @@ const ProductCreate = ({
   const titleCount = useMemo(() => form.title.length, [form.title]);
   const onChange = (e) =>
     setForm((s) => ({ ...s, [e.target.name]: e.target.value }));
+
+  useEffect(() => {
+    if (!isEdit) return;
+    (async () => {
+      try {
+        const data = await postService.getPost(postId);
+        setForm({
+          title: data.title ?? "",
+          price: data.price ?? "",
+          imageUrl: data.imageUrl ?? "",
+          content: data.content ?? "",
+          category: data.category ?? defaultCategory,
+        });
+
+        if (data.imageUrl) {
+          try {
+            const r = await api.get(
+              `/api/upload/post/image?url=${encodeURIComponent(data.imageUrl)}`
+            );
+            setImagePreview(r?.data?.imageUrl || data.imageUrl);
+          } catch {
+            setImagePreview(data.imageUrl);
+          }
+        }
+        setHashtagsInput(
+          (data.hashtags || []).map((h) => h.name ?? h).join(" ")
+        );
+      } catch (e) {
+        console.error(e);
+        setError("상품 정보를 불러오지 못했습니다.");
+      }
+    })();
+  }, [isEdit, postId]);
 
   const handleFile = async (file) => {
     if (!file) return;
@@ -138,7 +174,7 @@ const ProductCreate = ({
 
     resetForm();
     if (typeof goBack === "function") goBack();
-    else navigate("/");
+    else navigate(isEdit ? `/products/${postId}` : "/");
   };
 
   const onSubmit = async (e) => {
@@ -156,15 +192,32 @@ const ProductCreate = ({
         hashtags: parseHashtags(hashtagsInput),
       };
 
-      const data = await postService.createPost(payload);
-      onCreated?.(data);
-
-      resetForm();
-      navigate("/");
+      if (isEdit) {
+        const updated = await postService.updatePost(postId, payload);
+        resetForm();
+        navigate(`/products/${postId}`);
+      } else {
+        const data = await postService.createPost(payload);
+        onCreated?.(data);
+        resetForm();
+        navigate(`/products/${data.id}`);
+      }
     } catch (err) {
       setError(err?.response?.data?.message || err.message || "등록 실패");
     } finally {
       setSubmitting(false);
+    }
+  };
+
+  const onDelete = async () => {
+    if (!isEdit) return;
+    if (!window.confirm("정말 삭제할까요?")) return;
+    try {
+      await postService.deletePost(postId);
+      navigate("/products");
+    } catch (e) {
+      console.error(e);
+      alert("삭제 실패");
     }
   };
 
@@ -173,7 +226,10 @@ const ProductCreate = ({
       <Header />
       <div className="w-[960px] mx-auto p-6 font-presentation">
         <div className="flex items-center justify-between mb-6">
-          <h2 className="text-xl font-semibold">상품정보</h2>
+          <h2 className="text-xl font-semibold">
+            {isEdit ? "상품 수정" : "상품정보"}
+          </h2>
+
           {goBack && (
             <button
               onClick={goBack}
@@ -209,11 +265,14 @@ const ProductCreate = ({
               </label>
             ) : (
               <div className="relative group rounded-xl border overflow-hidden bg-gray-50">
-                <div className="w-full flex items-center justify-center">
+                <div className="w-full h-[520px] flex items-center justify-center">
                   <img
                     src={imagePreview}
                     alt="preview"
-                    className="max-w-full max-h-[520px] w-auto h-auto object-contain"
+                    className="w-full h-full object-contain"
+                    onError={(e) => {
+                      e.currentTarget.src = "";
+                    }}
                   />
                 </div>
 
@@ -385,7 +444,13 @@ const ProductCreate = ({
               disabled={submitting || uploading}
               className="cursor-pointer px-5 py-2 rounded-lg bg-rebay-blue hover:opacity-90 text-white disabled:opacity-50"
             >
-              {submitting ? "등록 중..." : "등록하기"}
+              {isEdit
+                ? submitting
+                  ? "수정 중..."
+                  : "수정하기"
+                : submitting
+                ? "등록 중..."
+                : "등록하기"}
             </button>
           </section>
 
