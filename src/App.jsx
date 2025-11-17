@@ -13,6 +13,7 @@ import UserProduct from "./pages/userProduct";
 import Checkout from "./pages/checkout";
 import PaymentSuccess from "./pages/paymentSuccess";
 import PaymentFail from "./pages/paymentFail";
+import TransactionDetail from "./pages/TransactionDetail";
 
 const App = () => {
   return (
@@ -32,6 +33,10 @@ const App = () => {
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/payment/success" element={<PaymentSuccess />} />
         <Route path="/payment/fail" element={<PaymentFail />} />
+        <Route
+          path="/transaction/:transactionId"
+          element={<TransactionDetail />}
+        />
       </Routes>
     </BrowserRouter>
   );
