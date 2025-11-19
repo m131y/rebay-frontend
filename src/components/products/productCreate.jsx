@@ -160,12 +160,13 @@ const ProductCreate = ({ onCreated, goBack }) => {
     (async () => {
       try {
         const data = await postService.getPost(postId);
+
         setForm({
           title: data.title ?? "",
           price: data.price ?? "",
           imageUrl: data.imageUrl ?? "",
           content: data.content ?? "",
-          category: data.category ?? defaultCategory,
+          finalCategoryCode: data.categoryCode ?? DEFAULT_LARGE_CODE,
         });
 
         if (data.imageUrl) {

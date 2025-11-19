@@ -370,7 +370,7 @@ export default function UserProduct() {
             <div className="pt-1 flex gap-2">
               <button
                 onClick={() => navigate(`/products/${post.id}/edit`)}
-                className="cursor-pointer inline-flex items-center justify-center rounded-lg border px-4 py-2 hover:bg-gray-100"
+                className="cursor-pointer inline-flex items-center justify-center rounded-lg border border-rebay-gray-400 px-4 py-2 hover:bg-gray-100"
               >
                 수정
               </button>
@@ -385,7 +385,7 @@ export default function UserProduct() {
                     alert("삭제 실패");
                   }
                 }}
-                className="cursor-pointer inline-flex items-center justify-center rounded-lg border px-4 py-2 hover:bg-gray-100"
+                className="cursor-pointer inline-flex items-center justify-center rounded-lg border border-rebay-gray-400 px-4 py-2 hover:bg-gray-100"
               >
                 삭제
               </button>

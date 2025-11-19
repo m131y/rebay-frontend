@@ -76,7 +76,10 @@ const Header = () => {
             <img src="/image-Photoroom.png" alt="ReBay" className="w-30" />
           </Link>
 
-          <form onSubmit={handleSearch} className="flex items-center relative">
+          <form
+            onSubmit={handleSearch}
+            className="font-presentation flex items-center relative"
+          >
             <div className="flex items-center bg-rebay-search w-[400px] h-[40px] px-[20px] rounded-full">
               <select
                 value={target}

@@ -139,7 +139,7 @@ const Home = () => {
 
                   <p className="font-presentation text-[30px] flex items-center font-bold text-gray-800">
                     사람들은 지금
-                    <div className="bg-black w-[120px] h-[40px] flex items-center justify-center rounded-full mx-1 text-white">
+                    <div className="bg-black max-w-max h-[40px] flex items-center justify-center rounded-full mx-1 px-3 text-white">
                       <span className="inline-block mx-1 ">
                         <CountUp
                           key={animationKey}

@@ -439,7 +439,7 @@ const Products = () => {
               <button
                 onClick={goPrev}
                 disabled={page <= 1}
-                className="px-3 py-1.5 rounded-lg border disabled:opacity-40"
+                className="px-3 py-1.5 rounded-lg border border-rebay-gray-400 disabled:opacity-40"
               >
                 이전
               </button>
@@ -450,7 +450,7 @@ const Products = () => {
                   <button
                     key={n}
                     onClick={() => setPage(n)}
-                    className={`px-3 py-1.5 rounded-lg border ${
+                    className={`px-3 py-1.5 rounded-lg border border-rebay-gray-400 ${
                       n === page ? "bg-blue-600 text-white" : ""
                     }`}
                   >
@@ -462,7 +462,7 @@ const Products = () => {
               <button
                 onClick={goNext}
                 disabled={page >= totalPages}
-                className="px-3 py-1.5 rounded-lg border disabled:opacity-40"
+                className="px-3 py-1.5 rounded-lg border border-rebay-gray-400 disabled:opacity-40"
               >
                 다음
               </button>
