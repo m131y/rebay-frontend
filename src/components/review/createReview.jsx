@@ -4,13 +4,16 @@ import { BsStar, BsStarFill } from "react-icons/bs";
 import useReviewStore from "../../store/reviewStore";
 import { useEffect, useMemo, useState } from "react";
 
-const CreateReview = ({ review, transactionId = 1, onClose }) => {
+const CreateReview = ({ review, onClose }) => {
   const { createReview, updateReview, loading, error } = useReviewStore();
 
   const [formData, setFormData] = useState({
     content: review?.content ? review?.content : "",
     rating: review?.rating ? review?.rating : "",
+    transactionId: "",
   });
+
+  const [transactionId, setTransactionId] = useState(0);
 
   const stars = [1, 2, 3, 4, 5];
 
@@ -18,11 +21,15 @@ const CreateReview = ({ review, transactionId = 1, onClose }) => {
     e.preventDefault();
     try {
       if (review) {
-        await updateReview(review.id, formData);
+        const { content, rating } = formData;
+        await updateReview(review.id, { content, rating });
         alert(`성공적으로 수정되었습니다.`);
         onClose();
       } else {
-        await createReview(transactionId, formData);
+        await createReview(formData.transactionId, {
+          content: formData.content,
+          rating: formData.rating,
+        });
         alert(`성공적으로 등록되었습니다.`);
         onClose();
       }
@@ -75,6 +82,14 @@ const CreateReview = ({ review, transactionId = 1, onClose }) => {
                 className="font-presentation flex flex-col gap-[15px]"
                 onSubmit={handleSubmit}
               >
+                <Input
+                  type="text"
+                  name="transactionId"
+                  placeholder="transactionId"
+                  value={formData.transactionId}
+                  onChange={handleChange}
+                  required
+                />
                 <textarea
                   type="text"
                   name="content"
