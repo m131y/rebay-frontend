@@ -31,6 +31,7 @@ const Header = () => {
 
   const handleLogout = () => {
     logout();
+    navigate("/");
     window.location.reload();
   };
 
