@@ -18,6 +18,8 @@ import { preparePayment } from "../services/payment";
 import TradeChart from "../components/ui/TradeChart";
 import { Chart as ChartJS } from "chart.js";
 
+import { chatApi } from "../services/chat";
+
 ChartJS.defaults.font.family = "Presentation";
 ChartJS.defaults.font.size = 11;
 ChartJS.defaults.font.weight = "400";
@@ -252,6 +254,31 @@ export default function UserProduct() {
     }
   };
 
+  // 채팅 시작 핸들러
+  const handleStartChat = async () => {
+    if (!user) {
+      alert("로그인이 필요합니다.");
+      navigate("/login");
+      return;
+    }
+    if (user.id === post.user.id) {
+      alert("자신의 상품과는 채팅할 수 없습니다.");
+      return;
+    }
+
+    try {
+      // 채팅방 생성/조회 요청
+      const res = await chatApi.createOrGetRoom(post.user.id);
+      const roomId = res.data;
+
+      // 채팅방으로 이동
+      navigate(`/chat/${roomId}`);
+    } catch (err) {
+      console.error("채팅방 연결 실패:", err);
+      alert("채팅방 연결에 실패했습니다.");
+    }
+  };
+
   //  결제 준비
   const handlePurchase = async () => {
     if (!post || !user) return;
@@ -456,6 +483,14 @@ export default function UserProduct() {
                     className="cursor-pointer inline-flex items-center justify-center rounded-lg bg-rebay-blue text-white px-7 py-3 text-[15px] shadow hover:shadow-md transition-all font-semibold hover:opacity-90"
                   >
                     구매하기
+                  </button>
+
+                  {/* 채팅하기 버튼 추가 */}
+                  <button
+                    onClick={handleStartChat}
+                    className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 px-7 py-3 text-[15px] font-semibold hover:bg-gray-50 transition"
+                  >
+                    채팅하기
                   </button>
                 </div>
               )}
