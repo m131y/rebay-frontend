@@ -16,7 +16,6 @@ import PaymentSuccess from "./pages/paymentSuccess";
 import PaymentFail from "./pages/paymentFail";
 import TransactionDetail from "./pages/TransactionDetail";
 import FindPassword from "./components/auth/findPassword";
-import ResetPassword from "./components/auth/resetPassword";
 
 const App = () => {
   return (
@@ -43,7 +42,6 @@ const App = () => {
           element={<TransactionDetail />}
         />
         <Route path="/findpw" element={<FindPassword />} />
-        <Route path="/resetpw" element={<ResetPassword />} />
       </Routes>
     </BrowserRouter>
   );

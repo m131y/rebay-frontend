@@ -32,7 +32,6 @@ const FindPassword = ({ OnClose }) => {
         : { username: loginIdForm.emailOrUsername };
 
       try {
-        // 서버에서 실제 fullName 가져오기
         const nameFromBackend = await findPassword(data);
 
         setActualFullName(nameFromBackend);

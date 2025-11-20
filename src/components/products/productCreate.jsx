@@ -2,11 +2,13 @@ import React, { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import postService from "../../services/post";
 import s3Service from "../../services/s3";
-import { FiEdit2, FiImage, FiTrash2 } from "react-icons/fi";
+import { FiEdit2, FiImage, FiTrash2, FiX } from "react-icons/fi";
 import MainLayout from "../layout/MainLayout";
 import Header from "../layout/Header";
 import Footer from "../layout/Footer";
 import api from "../../services/api";
+import useStatisticsStore from "../../store/statisticsStore";
+import Trade from "./Trade";
 
 const CATEGORY_HIERARCHY = {
   // Level 1: 대분류 (Large)
@@ -132,6 +134,8 @@ const ProductCreate = ({ onCreated, goBack }) => {
   const { postId } = useParams();
   const isEdit = Boolean(postId);
 
+  const { getTradeHistory } = useStatisticsStore();
+
   const [form, setForm] = useState({
     title: "",
     price: "",
@@ -143,10 +147,12 @@ const ProductCreate = ({ onCreated, goBack }) => {
   const [selectedLgCode, setSelectedLgCode] = useState(DEFAULT_LARGE_CODE);
   const [selectedMdCode, setSelectedMdCode] = useState("");
   const [selectedSmCode, setSelectedSmCode] = useState("");
-
+  const [tradeHistory, setTradeHistory] = useState([]);
+  const [showTradeHistory, setShowTradeHistory] = useState(false);
   const [hashtagsInput, setHashtagsInput] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [avgPrice, setAvgPrice] = useState(0);
   const [error, setError] = useState(null);
 
   const [imagePreview, setImagePreview] = useState("");
@@ -275,6 +281,26 @@ const ProductCreate = ({ onCreated, goBack }) => {
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImagePreview("");
     setError(null);
+  };
+
+  const handleTradeHistory = async () => {
+    console.log(form.finalCategoryCode);
+    setTradeHistory(await getTradeHistory(form.finalCategoryCode));
+    setShowTradeHistory(true);
+  };
+
+  useEffect(() => {
+    const totalPriceSum = tradeHistory.reduce((sum, history) => {
+      const price = Number(history.price);
+      return sum + (isNaN(price) ? 0 : price);
+    }, 0);
+
+    const avg = totalPriceSum / tradeHistory.length;
+    setAvgPrice(Math.round(avg));
+  }, [tradeHistory]);
+
+  const recommendPrice = () => {
+    setForm((s) => ({ ...s, price: avgPrice }));
   };
 
   const handleCancel = () => {
@@ -548,7 +574,60 @@ const ProductCreate = ({ onCreated, goBack }) => {
                   />
                 </svg>
               </div>
+              <button
+                type="button"
+                onClick={handleTradeHistory}
+                className="flex bg-rebay-blue w-[100px] rounded-xl text-white font-bold justify-center items-center"
+              >
+                <div>시세확인</div>
+              </button>
             </div>
+          </section>
+
+          <section className="relative">
+            {showTradeHistory && tradeHistory.length > 0 && (
+              <div className="flex flex-col mb-5 absolute z-10 top-full right-0 mt-2 w-[300px]">
+                <div className="flex flex-col space-y-1 bg-white rounded-xl shadow-md transition-all border border-rebay-gray-400 h-auto p-3">
+                  <div className="flex justify-between p-1 font-bold text-lg">
+                    <div>평균 거래 시세</div>
+                    <div>
+                      <FiX
+                        className="cursor-pointer"
+                        onClick={() => setShowTradeHistory(false)}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between p-1 rounded-md bg-rebay-gray-100 text-rebay-gray-600">
+                    <label className="ml-1 ">총 거래 건수</label>
+                    <div className="mr-1">{tradeHistory.length}건</div>
+                  </div>
+                  <div className="flex flex-col p-1 text-white rounded-sm bg-rebay-blue">
+                    <label className="ml-1">평균 가격</label>
+                    <div className=" flex justify-between">
+                      <div className="text-2xl ml-1 font-bold">
+                        {avgPrice.toLocaleString("ko-KR")} 원
+                      </div>
+                      <button
+                        type="button"
+                        onClick={recommendPrice}
+                        className="cursor-pointer text-xs border border-white bg-white/20 text-white rounded-full w-[70px] mr-2"
+                      >
+                        평균가격 선택
+                      </button>
+                    </div>
+                    <div className="text-x ml-1">*최근 판매가 기준</div>
+                  </div>
+                  <div className="p-1">
+                    <label>거래내역</label>
+                    <div className="text-xs text-rebay-gray-600 border p-1 rounded-sm border-gray-300 bg-gray-100 ">
+                      {tradeHistory.map((history) => (
+                        <Trade history={history} />
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
 
           <section>
