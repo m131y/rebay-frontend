@@ -6,6 +6,7 @@ import Signup from "../auth/signup";
 import useAuthStore from "../../store/authStore";
 import useSearchStore from "../../store/searchStore";
 import NotificationBell from "../notification/NotificationBell";
+import FindPassword from "../auth/findPassword";
 
 const Header = () => {
   const { user, logout } = useAuthStore();
@@ -16,9 +17,15 @@ const Header = () => {
 
   const [showLogin, setShowLogin] = useState(false);
   const [showSignup, setShowSignup] = useState(false);
+  const [showFindPassword, setShowFindPassword] = useState(false);
 
   const [keyword, setKeyword] = useState("");
   const [target, setTarget] = useState("TITLE");
+
+  const handleOpenFindPassword = () => {
+    setShowLogin(false);
+    setShowFindPassword(true);
+  };
 
   const handleOpenSignup = () => {
     setShowLogin(false);
@@ -196,6 +203,7 @@ const Header = () => {
           <Login
             onClose={() => setShowLogin(false)}
             onOpenSignup={handleOpenSignup}
+            onOpenFindPassword={handleOpenFindPassword}
           />
         </div>
       )}
@@ -205,6 +213,15 @@ const Header = () => {
           <Signup
             onClose={() => setShowSignup(false)}
             onOpenLogin={handleOpenLogin}
+          />
+        </div>
+      )}
+
+      {showFindPassword && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <FindPassword
+            OnClose={() => setShowFindPassword(false)}
+            onOpenFindPassword={handleOpenFindPassword}
           />
         </div>
       )}

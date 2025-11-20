@@ -137,7 +137,7 @@ const Home = () => {
                     여기서만 느낄 수 있는 경매의 재미, ReBay
                   </h1>
 
-                  <p className="font-presentation text-[30px] flex items-center font-bold text-gray-800">
+                  <div className="font-presentation text-[30px] flex items-center font-bold text-gray-800">
                     사람들은 지금
                     <div className="bg-black max-w-max h-[40px] flex items-center justify-center rounded-full mx-1 px-3 text-white">
                       <span className="inline-block mx-1 ">
@@ -149,7 +149,7 @@ const Home = () => {
                       </span>
                     </div>
                     원 벌고 있어요
-                  </p>
+                  </div>
                 </div>
                 <button
                   onClick={handleSellClick}

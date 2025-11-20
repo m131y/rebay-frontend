@@ -19,5 +19,15 @@ const userService = {
     const response = await api.get(`/api/search/history`);
     return response.data;
   },
+
+  async findPassword(LoginData) {
+    const response = await api.post(`/api/user/findPassword`, LoginData);
+    return response.data;
+  },
+
+  async resetPassword(passwordData) {
+    const response = await api.put(`/api/user/resetPassword`, passwordData);
+    return response.data;
+  },
 };
 export default userService;

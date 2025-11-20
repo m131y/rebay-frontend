@@ -15,8 +15,20 @@ import Checkout from "./pages/checkout";
 import PaymentSuccess from "./pages/paymentSuccess";
 import PaymentFail from "./pages/paymentFail";
 import TransactionDetail from "./pages/TransactionDetail";
+import FindPassword from "./components/auth/findPassword";
+
+import { useEffect } from "react";
+import ChatPage from "./pages/chat/ChatPage";
+import useChatStore from "./store/chatStore";
 
 const App = () => {
+  const { connectSocket, disconnectSocket } = useChatStore();
+
+  useEffect(() => {
+    connectSocket(); // 앱 실행 시 소켓 연결 시도
+    return () => disconnectSocket();
+  }, []);
+
   return (
     <BrowserRouter>
       <Routes>
@@ -40,6 +52,8 @@ const App = () => {
           path="/transaction/:transactionId"
           element={<TransactionDetail />}
         />
+        <Route path="/chat/:roomId" element={<ChatPage />} />
+        <Route path="/findpw" element={<FindPassword />} />
       </Routes>
     </BrowserRouter>
   );

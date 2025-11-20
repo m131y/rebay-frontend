@@ -5,8 +5,9 @@ import { FaGithub } from "react-icons/fa";
 import Input from "../ui/Input";
 import { FiX } from "react-icons/fi";
 import useAuthStore from "../../store/authStore";
+import FindPassword from "./findPassword";
 
-const Login = ({ onClose, onOpenSignup }) => {
+const Login = ({ onClose, onOpenSignup, onOpenFindPassword }) => {
   const navigate = useNavigate();
 
   const { login, loading, error } = useAuthStore();
@@ -127,12 +128,12 @@ const Login = ({ onClose, onOpenSignup }) => {
                 </button>
               </div>
 
-              <Link
-                to="/forgot-password"
+              <div
+                onClick={onOpenFindPassword}
                 className="block text-center text-sm text-gray-600 hover:text-blue-500 transition-colors mt-8"
               >
                 Forgot password?
-              </Link>
+              </div>
 
               <div className="text-center mt-5 text-sm">
                 <p className="text-gray-600 flex flex-col">

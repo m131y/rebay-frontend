@@ -30,6 +30,9 @@ const useUserStore = create((set) => ({
     try {
       const data = await userService.updateProfile(userData);
       console.log("userService:", data);
+      set({
+        loading: false,
+      });
       return data;
     } catch (err) {
       set({
@@ -44,6 +47,9 @@ const useUserStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       await userService.updatePassword(passwordData);
+      set({
+        loading: false,
+      });
     } catch (err) {
       set({
         error: err.response?.data.message || "Failed to update password",
@@ -57,10 +63,44 @@ const useUserStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await userService.getSearchHistory();
-      set({ searchHistory: data });
+      set({ loading: false, searchHistory: data });
     } catch (err) {
       set({
         error: err.response?.data.message || "Failed to get search history",
+        loading: false,
+      });
+      throw err;
+    }
+  },
+
+  findPassword: async (LoginData) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await userService.findPassword(LoginData);
+      set({
+        loading: false,
+      });
+      return data;
+    } catch (err) {
+      set({
+        error: err.response?.data.message || "Failed to find password",
+        loading: false,
+      });
+      throw err;
+    }
+  },
+
+  resetPassword: async (passwordData) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await userService.resetPassword(passwordData);
+      set({
+        loading: false,
+      });
+      return data;
+    } catch (err) {
+      set({
+        error: err.response?.data.message || "Failed to reset password",
         loading: false,
       });
       throw err;
