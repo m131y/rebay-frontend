@@ -1,5 +1,6 @@
 import { useRef, useState, useEffect } from "react";
 import { FaBars, FaSearch } from "react-icons/fa";
+import { FiMessageCircle } from "react-icons/fi"; // 아이콘
 import { Link, useNavigate } from "react-router-dom";
 import Login from "../auth/login";
 import Signup from "../auth/signup";
@@ -141,6 +142,13 @@ const Header = () => {
         {user ? (
           <nav className="items flex space-x-4 items-center">
             <NotificationBell />
+
+            <Link
+              to="/chat"
+              className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
+            >
+              <FiMessageCircle size={24} className="text-gray-600" />
+            </Link>
 
             <Link
               to="/sell"

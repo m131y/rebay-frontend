@@ -13,6 +13,9 @@ export const chatApi = {
   // 채팅방 메시지 내역 조회
   getMessages: (roomId, page = 0, size = 50) =>
     api.get(`/api/chat/rooms/${roomId}/messages`, { params: { page, size } }),
+
+  // 내 채팅방 목록 조회
+  getChatRooms: () => api.get("/api/chat/rooms"),
 };
 
 class ChatSocket {

@@ -20,6 +20,7 @@ import FindPassword from "./components/auth/findPassword";
 import { useEffect } from "react";
 import ChatPage from "./pages/chat/ChatPage";
 import useChatStore from "./store/chatStore";
+import ChatList from "./pages/chat/ChatList";
 
 const App = () => {
   const { connectSocket, disconnectSocket } = useChatStore();
@@ -52,6 +53,8 @@ const App = () => {
           path="/transaction/:transactionId"
           element={<TransactionDetail />}
         />
+
+        <Route path="/chat" element={<ChatList />} />
         <Route path="/chat/:roomId" element={<ChatPage />} />
         <Route path="/findpw" element={<FindPassword />} />
       </Routes>
