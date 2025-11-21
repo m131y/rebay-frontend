@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 env:
-  DOCKER_REPO: rebay-frontend # Docker 이미지 이름
+  DOCKER_REPO: rebay-frontend
 
 jobs:
   build-and-deploy:
@@ -26,6 +26,9 @@ jobs:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
+      - name: Set VITE_API_URL
+        run: echo "VITE_API_URL=http://${{ secrets.EC2_HOST }}" >> $GITHUB_ENV
+
       - name: Build and push Frontend image
         uses: docker/build-push-action@v5
         with:
@@ -34,12 +37,13 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: |
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_REPO }}:latest
-            ${{ secrets.DOCKER_USERNAME }}/${{ env.DOCKER_REPO }}:${{ github.sha }}
+            ${{ secrets.DOCKER_USERNAME }}/rebay-frontend:latest
+            ${{ secrets.DOCKER_USERNAME }}/rebay-frontend:${{ github.sha }}
           build-args: |
-            VITE_API_URL=${{ secrets.VITE_API_BASE_URL }}
+            VITE_API_URL=/api
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/rebay-frontend:latest
           cache-to: type=inline
+          no-cache: true
 
       - name: Deploy to EC2
         uses: appleboy/ssh-action@v1.0.0
@@ -48,27 +52,19 @@ jobs:
           username: ${{ secrets.EC2_USERNAME }}
           key: ${{ secrets.EC2_SSH_KEY }}
           script: |
-            # Navigate to project directory
+            # 이동
             cd ~/rebay-app || exit 1
 
-            # Set environment variables
-            export DOCKER_USERNAME=${{ secrets.DOCKER_USERNAME }}
+            # 최신이미지 Pull
+            docker-compose -f docker-compose.prod.yml pull frontend
 
-            # Pull latest images
-            # docker-compose -f docker-compose.prod.yml pull
-            docker-compose pull frontend
+            # 프론트엔드만 재배포
+            docker-compose -f docker-compose.prod.yml up -d --no-deps frontend
 
-            # Stop and remove old containers
-            # docker-compose -f docker-compose.prod.yml down
-
-            # Start new containers
-            # docker-compose -f docker-compose.prod.yml up -d
-            docker-compose up -d --no-deps frontend
-
-            # Verify containers are running
+            # 실행 상태 확인
             docker-compose -f docker-compose.prod.yml ps
 
-            # Clean up old images
+            # 불필요한 이미지 정리
             docker image prune -f
 
-            echo "Deployment completed successfully!"
+            echo "Frontend deployment completed successfully!"

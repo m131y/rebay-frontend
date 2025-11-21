@@ -2,7 +2,7 @@ import Footer from "../components/layout/Footer";
 import Header from "../components/layout/Header";
 import MainLayout from "../components/layout/MainLayout";
 import Product from "../components/products/product";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import ImageSlider from "../components/ui/imageSlider";
 import { useEffect, useRef, useState } from "react";
 import useStatisticsStore from "../store/statisticsStore";
@@ -12,7 +12,7 @@ import Login from "../components/auth/login";
 import Signup from "../components/auth/signup";
 import CountUp from "../components/ui/CountUp";
 import { FaChevronLeft, FaChevronRight } from "react-icons/fa";
-import KeywordCards from "../components/ui/keywordCard";
+import KeywordCard from "../components/ui/KeywordCard";
 
 const Home = () => {
   const {
@@ -123,6 +123,10 @@ const Home = () => {
     }
   };
 
+  useEffect(() => {
+    console.log("VITE_API_URL:", import.meta.env.VITE_API_URL);
+  }, []);
+
   return (
     <MainLayout>
       <Header />
@@ -186,23 +190,16 @@ const Home = () => {
                 ref={scrollRef} // useRef로 스크롤 대상 지정
                 className="flex flex-row overflow-x-scroll hide-scrollbar space-x-4 h-auto pb-4"
               >
-                {dailyTopKeywords.map((keyword, keywordIndex) => (
-                  <KeywordCards
-                    key={keywordIndex}
-                    rank={keywordIndex + 1}
-                    term={keyword}
-                  />
-                ))}
+                {Array.isArray(dailyTopKeywords) &&
+                  dailyTopKeywords.map((keyword, keywordIndex) => (
+                    <KeywordCard
+                      key={keywordIndex}
+                      rank={keywordIndex + 1}
+                      term={keyword}
+                    />
+                  ))}
               </div>
             </section>
-
-            {/* <section className="w-full flex justify-center">
-              <div className="w-[690px] p-2 border border-rebay-gray-400 flex justify-between font-presentation">
-                {searchHistory.map((history) => (
-                  <div>{history}</div>
-                ))}
-              </div>
-            </section> */}
 
             <section className="w-[690px] flex items-center justify-start">
               {<ImageSlider />}
@@ -247,14 +244,15 @@ const Home = () => {
 
                 <div className="w-full h-auto">
                   <div className="grid grid-cols-5 gap-[10px]">
-                    {weeklyTopPosts.map((post) => (
-                      <Product
-                        key={post.id}
-                        post={post}
-                        onClick={handleProductClick}
-                        variant="compact"
-                      />
-                    ))}
+                    {Array.isArray(weeklyTopPosts) &&
+                      weeklyTopPosts.map((post) => (
+                        <Product
+                          key={post.id}
+                          post={post}
+                          onClick={handleProductClick}
+                          variant="compact"
+                        />
+                      ))}
                   </div>
                 </div>
               </section>
@@ -268,9 +266,14 @@ const Home = () => {
 
                   <div className="w-full h-auto">
                     <div className="grid grid-cols-5 gap-[10px]">
-                      {personalizedRecommendationPosts.map((post) => (
-                        <Product key={post.id} post={post} variant="compact" />
-                      ))}
+                      {Array.isArray(personalizedRecommendationPosts) &&
+                        personalizedRecommendationPosts.map((post) => (
+                          <Product
+                            key={post.id}
+                            post={post}
+                            variant="compact"
+                          />
+                        ))}
                     </div>
                   </div>
                 </section>
