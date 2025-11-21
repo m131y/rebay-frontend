@@ -9,13 +9,11 @@ const s3Service = {
         "Content-Type": "multipart/form-data",
       },
     });
-    console.log("s3Service:", response.data);
     return response.data;
   },
 
   getImage: async (imageUrl) => {
     const response = await api.get(`/api/upload/post/image?url=${imageUrl}`);
-    console.log("s3Service:", response.data);
     return response.data;
   },
 };

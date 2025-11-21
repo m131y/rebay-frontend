@@ -11,7 +11,6 @@ const useReviewStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await reviewService.getSellerReviews(sellerId);
-      console.log("reviewStore:", data.content);
       set({
         sellerReviews: data.content,
         loading: false,
@@ -29,7 +28,6 @@ const useReviewStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await reviewService.getReviewerReviewes(reviewerId);
-      console.log("reviewStore:", data.content);
       set({
         ReviewerReviews: data.content,
         loading: false,
@@ -48,7 +46,6 @@ const useReviewStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await reviewService.createReview(transactionId, formData);
-      console.log("reviewStore:", data.content);
       set({
         loading: false,
       });
@@ -65,7 +62,6 @@ const useReviewStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await reviewService.updateReview(reviewId, formData);
-      console.log("reviewStore:", data);
       set({
         loading: false,
       });
@@ -98,7 +94,6 @@ const useReviewStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await reviewService.getReviewsCountByUser(sellerId);
-      console.log("reviewStore:", data);
       set({
         loading: false,
       });

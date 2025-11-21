@@ -192,7 +192,6 @@ export default function UserProduct() {
         }
 
         setPost(data);
-        console.log(data);
         if (data.imageUrl) {
           const imgRes = await api.get(
             `/api/upload/post/image?url=${encodeURIComponent(data.imageUrl)}`

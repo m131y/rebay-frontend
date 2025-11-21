@@ -10,7 +10,7 @@ import Products from "./pages/products";
 import ProductCreate from "./components/products/productCreate";
 import CreateReview from "./components/review/createReview";
 import UserProduct from "./pages/userProduct";
-import Search from "./pages/Search";
+import Search from "./pages/search";
 import Checkout from "./pages/checkout";
 import PaymentSuccess from "./pages/paymentSuccess";
 import PaymentFail from "./pages/paymentFail";

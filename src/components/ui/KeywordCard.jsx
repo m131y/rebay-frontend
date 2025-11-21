@@ -1,4 +1,4 @@
-const KeywordCards = ({ key, rank, term }) => {
+const KeywordCard = ({ key, rank, term }) => {
   let rankColorClass = "bg-rebay-gray-300";
   if (rank === 1) {
     rankColorClass = "bg-rebay-blue"; // 1위 강조
@@ -24,4 +24,4 @@ const KeywordCards = ({ key, rank, term }) => {
   );
 };
 
-export default KeywordCards;
+export default KeywordCard;

@@ -139,7 +139,6 @@ const UserProfile = () => {
     const loadUserPosts = async () => {
       try {
         if (targetUserId) {
-          console.log(targetUserId);
           await getUserPosts(targetUserId);
         }
       } catch (err) {

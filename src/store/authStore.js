@@ -11,7 +11,6 @@ const useAuthStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await authService.register(userData);
-      console.log("authStore:", data);
       set({
         user: data.user,
         isAuthenticated: true,
@@ -31,7 +30,6 @@ const useAuthStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await authService.login(userData);
-      console.log("authStore:", data);
       set({
         user: data.user,
         isAuthenticated: true,
