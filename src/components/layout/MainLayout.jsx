@@ -1,7 +1,17 @@
 const MainLayout = ({ children, className = "" }) => {
   return (
-    <div>
-      <div className={`${className}`}>{children}</div>
+    <div
+      className={`
+        w-full 
+        max-w-full
+        mx-auto 
+        min-h-screen 
+        bg-white 
+        flex flex-col
+        ${className} 
+      `}
+    >
+      {children}
     </div>
   );
 };

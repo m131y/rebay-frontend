@@ -1,0 +1,10 @@
+# <type>(<scope>): <subject>
+# ------------------------------------------------------------
+# <type> : feat | fix | docs | style | refactor | test | chore | settings | deploy
+# <scope> : 변경된 모듈/도메인/패키지/기능명 (선택)
+# <subject> :
+# ------------------------------------------------------------
+
+# (예시)
+
+feat(comment): 댓글 작성 API

@@ -1,0 +1,33 @@
+import api from "./api";
+
+const userService = {
+  async getUserProfile(userId) {
+    const response = await api.get(`/api/user/${userId}`);
+    return response.data;
+  },
+
+  async updateProfile(userData) {
+    const response = await api.put(`/api/user/me`, userData);
+    return response.data;
+  },
+
+  async updatePassword(passwordData) {
+    await api.put(`/api/user/me/password`, passwordData);
+  },
+
+  async getSearchHistory() {
+    const response = await api.get(`/api/search/history`);
+    return response.data;
+  },
+
+  async findPassword(LoginData) {
+    const response = await api.post(`/api/user/findPassword`, LoginData);
+    return response.data;
+  },
+
+  async resetPassword(passwordData) {
+    const response = await api.put(`/api/user/resetPassword`, passwordData);
+    return response.data;
+  },
+};
+export default userService;
