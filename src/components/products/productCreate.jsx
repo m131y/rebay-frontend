@@ -10,6 +10,9 @@ import api from "../../services/api";
 import useStatisticsStore from "../../store/statisticsStore";
 import Trade from "./Trade";
 
+import aiService from "../../services/ai";
+import { FiCpu } from "react-icons/fi"; // 아이콘 (없으면 react-icons 설치 필요, 아니면 텍스트로 대체)
+
 const CATEGORY_HIERARCHY = {
   // Level 1: 대분류 (Large)
   200: {
@@ -157,6 +160,9 @@ const ProductCreate = ({ onCreated, goBack }) => {
 
   const [imagePreview, setImagePreview] = useState("");
 
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [fileForAi, setFileForAi] = useState(null); // 분석할 원본 파일 저장
+
   const titleCount = useMemo(() => form.title.length, [form.title]);
   const onChange = (e) =>
     setForm((s) => ({ ...s, [e.target.name]: e.target.value }));
@@ -240,6 +246,8 @@ const ProductCreate = ({ onCreated, goBack }) => {
   const handleFile = async (file) => {
     if (!file) return;
 
+    setFileForAi(file); // [추가] AI 분석을 위해 원본 파일 저장
+
     const localUrl = URL.createObjectURL(file);
     if (imagePreview) URL.revokeObjectURL(imagePreview);
     setImagePreview(localUrl);
@@ -317,6 +325,85 @@ const ProductCreate = ({ onCreated, goBack }) => {
     else navigate(isEdit ? `/products/${postId}` : "/");
   };
 
+  // AI 분석 핸들러
+  const handleAiAnalysis = async () => {
+    if (!fileForAi) {
+      alert("먼저 상품 이미지를 등록해주세요.");
+      return;
+    }
+
+    const confirmed = window.confirm(
+      "AI가 이미지를 분석하여 제목, 내용, 카테고리를 자동으로 작성합니다.\n기존 내용은 덮어씌워집니다. 진행하시겠습니까?"
+    );
+    if (!confirmed) return;
+
+    setIsAnalyzing(true);
+    try {
+      const data = await aiService.analyzeImage(fileForAi);
+
+      // 텍스트 데이터 적용
+      setForm((prev) => ({
+        ...prev,
+        title: data.title || prev.title,
+        content: data.content || prev.content,
+        finalCategoryCode: data.categoryCode || prev.finalCategoryCode,
+      }));
+
+      // 카테고리 드롭다운 자동 선택 로직
+      if (data.categoryCode) {
+        const targetCode = String(data.categoryCode);
+        let foundLg = "",
+          foundMd = "",
+          foundSm = "";
+
+        // 계층 구조 탐색 (대분류 -> 중분류 -> 소분류)
+        // CATEGORY_HIERARCHY는 컴포넌트 외부에 정의되어 있으므로 바로 접근 가능
+        outerLoop: for (const [lgKey, lgVal] of Object.entries(
+          CATEGORY_HIERARCHY
+        )) {
+          // 대분류 자체가 타겟인 경우
+          if (lgKey === targetCode) {
+            foundLg = lgKey;
+            break;
+          }
+
+          const mdChildren = lgVal.children || {};
+          for (const [mdKey, mdVal] of Object.entries(mdChildren)) {
+            // 중분류가 타겟인 경우
+            if (mdKey === targetCode) {
+              foundLg = lgKey;
+              foundMd = mdKey;
+              break outerLoop;
+            }
+
+            const smChildren = mdVal.children || {};
+            for (const [smKey, _] of Object.entries(smChildren)) {
+              // 소분류가 타겟인 경우
+              if (smKey === targetCode) {
+                foundLg = lgKey;
+                foundMd = mdKey;
+                foundSm = smKey;
+                break outerLoop;
+              }
+            }
+          }
+        }
+
+        // 찾은 값으로 상태 업데이트 (UI 반영)
+        if (foundLg) setSelectedLgCode(foundLg);
+        if (foundMd) setSelectedMdCode(foundMd); // 없으면 "" (초기화)
+        if (foundSm) setSelectedSmCode(foundSm);
+      }
+
+      alert("AI 분석이 완료되었습니다!");
+    } catch (err) {
+      console.error(err);
+      alert("AI 분석에 실패했습니다.");
+    } finally {
+      setIsAnalyzing(false);
+    }
+  };
+
   const onSubmit = async (e) => {
     e.preventDefault();
 
@@ -388,6 +475,29 @@ const ProductCreate = ({ onCreated, goBack }) => {
         <form onSubmit={onSubmit} className="space-y-8">
           <section>
             <label className="block text-sm font-medium mb-2">상품이미지</label>
+
+            {/* [추가] AI 버튼 */}
+            {imagePreview && (
+              <button
+                type="button"
+                onClick={handleAiAnalysis}
+                disabled={isAnalyzing}
+                className={`
+                     flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-bold text-white transition-all shadow-sm
+                     ${
+                       isAnalyzing
+                         ? "bg-gray-400 cursor-wait"
+                         : "bg-gradient-to-r from-indigo-500 to-purple-600 hover:shadow-md hover:-translate-y-0.5"
+                     }
+                   `}
+              >
+                <FiCpu
+                  size={14}
+                  className={isAnalyzing ? "animate-spin" : ""}
+                />
+                {isAnalyzing ? "AI 분석 중..." : "✨ AI 자동 채우기"}
+              </button>
+            )}
 
             {!imagePreview ? (
               <label
