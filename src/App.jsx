@@ -20,6 +20,7 @@ import FindPassword from "./components/auth/findPassword";
 import { useEffect } from "react";
 import ChatPage from "./pages/chat/ChatPage";
 import useChatStore from "./store/chatStore";
+import UserTransactions from "./pages/userTransactions";
 import ChatList from "./pages/chat/ChatList";
 
 const App = () => {
@@ -53,7 +54,7 @@ const App = () => {
           path="/transaction/:transactionId"
           element={<TransactionDetail />}
         />
-
+        <Route path="/user/:id/transactions" element={<UserTransactions />} />
         <Route path="/chat" element={<ChatList />} />
         <Route path="/chat/:roomId" element={<ChatPage />} />
         <Route path="/findpw" element={<FindPassword />} />

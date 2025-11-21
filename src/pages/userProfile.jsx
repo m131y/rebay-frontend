@@ -177,7 +177,7 @@ const UserProfile = () => {
                 </div>
               </div>
 
-              <div className="mt-[20px]">
+              <div className="mt-[20px] flex gap-3">
                 {!isOwnProfile ? (
                   userProfile.following ? (
                     <button
@@ -195,12 +195,23 @@ const UserProfile = () => {
                     </button>
                   )
                 ) : (
-                  <button
-                    onClick={() => navigate(`/user/${userProfile.id}/edit`)}
-                    className="cursor-pointer w-[120px] h-[40px] rounded-xl shadow-sm hover:shadow-lg font-bold bg-rebay-gray-300 transition-all  duration-200 hover-bg-rebay-gray-300"
-                  >
-                    edit
-                  </button>
+                  <>
+                    <button
+                      onClick={() => navigate(`/user/${userProfile.id}/edit`)}
+                      className="cursor-pointer w-[120px] h-[40px] rounded-xl shadow-sm hover:shadow-lg font-bold bg-rebay-gray-300 transition-all duration-200 hover-bg-rebay-gray-300"
+                    >
+                      edit
+                    </button>
+
+                    <button
+                      onClick={() =>
+                        navigate(`/user/${userProfile.id}/transactions`)
+                      }
+                      className="cursor-pointer w-[120px] h-[40px] rounded-xl shadow-sm hover:shadow-lg font-bold bg-rebay-blue text-white transition-all duration-200 hover:opacity-90"
+                    >
+                      거래내역
+                    </button>
+                  </>
                 )}
               </div>
             </div>
