@@ -1,4 +1,4 @@
-// ✅ src/pages/userProduct.jsx
+// ✅ src/pages/userProduct.jsx (A버전 캐러셀)
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
@@ -30,6 +30,48 @@ const priceFormat = (v) =>
     : new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
         Number(v)
       );
+
+// ======================
+// A버전 공통 이미지 키 추출 함수
+// (ProductCreate에서 쓰던 컨셉이랑 동일하게 여러 필드 지원)
+// ======================
+function extractImageKeys(post) {
+  if (!post) return [];
+
+  // 1) 여러 장 배열 형태 우선 확인
+  const candidates = [
+    post.imageUrls,
+    post.images,
+    post.imageList,
+    post.photos,
+    post.files,
+    post.attachments,
+    post.postImages,
+    post.imageKeys,
+  ].filter(Boolean);
+
+  for (const cand of candidates) {
+    if (Array.isArray(cand) && cand.length > 0) {
+      const arr = cand
+        .map((it) => {
+          if (typeof it === "string") return it;
+          if (!it || typeof it !== "object") return null;
+          return (
+            it.imageUrl || it.url || it.key || it.path || it.fileKey || null
+          );
+        })
+        .filter((s) => typeof s === "string" && s.trim());
+      if (arr.length) return arr;
+    }
+  }
+
+  // 2) 단일 이미지 필드
+  if (typeof post.imageUrl === "string" && post.imageUrl.trim()) {
+    return [post.imageUrl.trim()];
+  }
+
+  return [];
+}
 
 const CATEGORY_HIERARCHY = {
   200: {
@@ -163,7 +205,11 @@ export default function UserProduct() {
 
   const [isfollowing, setIsFollowing] = useState(null);
   const [post, setPost] = useState(null);
-  const [imgUrl, setImgUrl] = useState(null);
+
+  // ⭐ A버전 이미지 캐러셀 상태
+  const [images, setImages] = useState([]); // presign된 이미지 URL 배열
+  const [current, setCurrent] = useState(0); // 대표 인덱스
+
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
@@ -178,6 +224,7 @@ export default function UserProduct() {
     following: 0,
   });
 
+  // ✅ 상품 상세 + 이미지 presign
   useEffect(() => {
     const fetchPost = async () => {
       try {
@@ -187,19 +234,40 @@ export default function UserProduct() {
 
         if (!data) {
           setPost(null);
+          setImages([]);
           setLoading(false);
           return;
         }
 
         setPost(data);
-        if (data.imageUrl) {
-          const imgRes = await api.get(
-            `/api/upload/post/image?url=${encodeURIComponent(data.imageUrl)}`
-          );
-          setImgUrl(imgRes?.data?.imageUrl || data.imageUrl);
+
+        // ⭐ 여러 장 이미지 키 추출 → presign URL 변환
+        const keys = extractImageKeys(data);
+
+        if (keys.length > 0) {
+          try {
+            const urls = await Promise.all(
+              keys.map(async (k) => {
+                try {
+                  const imgRes = await api.get(
+                    `/api/upload/post/image?url=${encodeURIComponent(k)}`
+                  );
+                  return imgRes?.data?.imageUrl || k;
+                } catch {
+                  return k; // presign 실패 시 원본 key 그대로
+                }
+              })
+            );
+            setImages(urls);
+            setCurrent(0);
+          } catch {
+            setImages(keys);
+            setCurrent(0);
+          }
         } else {
-          setImgUrl(null);
+          setImages([]);
         }
+
         const rawLiked = localStorage.getItem(`liked:${postId}`);
         const rawCount = localStorage.getItem(`likeCount:${postId}`);
         setLiked(rawLiked ? JSON.parse(rawLiked) : false);
@@ -207,6 +275,7 @@ export default function UserProduct() {
       } catch (err) {
         console.error("❌ 상품 조회 실패:", err);
         setPost(null);
+        setImages([]);
       } finally {
         setLoading(false);
       }
@@ -219,6 +288,7 @@ export default function UserProduct() {
     }
   }, [postId]);
 
+  // 판매자 정보
   useEffect(() => {
     const fetchSeller = async () => {
       try {
@@ -229,8 +299,8 @@ export default function UserProduct() {
       }
     };
 
-    fetchSeller();
-  }, [post]);
+    if (post?.user?.id) fetchSeller();
+  }, [post?.user?.id, post?.user?.following, getStatisticsByUserProfile]);
 
   const handleToggleFollow = async () => {
     await toggleFollow(post?.user?.id);
@@ -247,7 +317,7 @@ export default function UserProduct() {
       setLiked(isLiked);
       setLikeCount(likeCount);
       localStorage.setItem(`liked:${postId}`, JSON.stringify(isLiked));
-      localStorage.setItem(`likeCount:${post.id}`, String(likeCount)); // ✅ 추가
+      localStorage.setItem(`likeCount:${postId}`, String(likeCount));
     } catch (e) {
       console.error("좋아요 실패:", e);
     }
@@ -360,6 +430,15 @@ export default function UserProduct() {
     fetchTradeHistory();
   }, [post?.categoryCode, getTradeHistory]);
 
+  // ⭐ 캐러셀 이동 함수
+  const prev = () =>
+    setCurrent((i) =>
+      images.length ? (i - 1 + images.length) % images.length : 0
+    );
+  const next = () =>
+    setCurrent((i) => (images.length ? (i + 1) % images.length : 0));
+  const go = (idx) => setCurrent(idx);
+
   if (loading)
     return (
       <div className="max-w-[1100px] mx-auto px-4 py-6 text-gray-500">
@@ -384,6 +463,7 @@ export default function UserProduct() {
     <MainLayout>
       <Header />
       <div className="max-w-[1100px] mx-auto px-4 py-6 font-presentation">
+        {/* 상단 버튼 줄 */}
         <div className="mb-4 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
@@ -419,11 +499,12 @@ export default function UserProduct() {
           )}
         </div>
 
-        {/* 상단 */}
+        {/* 상단 영역 */}
         <section className="grid grid-cols-12 gap-8">
-          {/* 이미지 */}
+          {/* ⭐ A버전 이미지 캐러셀 */}
           <div className="col-span-12 md:col-span-6">
             <div className="relative rounded-2xl border border-rebay-gray-400 shadow p-2 bg-gray-50">
+              {/* 좋아요 버튼 */}
               <button
                 onClick={onToggleLike}
                 className="cursor-pointer absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-red-500/40 backdrop-blur px-2.5 py-1.5 text-sm hover:bg-red-500/50"
@@ -439,21 +520,61 @@ export default function UserProduct() {
                 </span>
               </button>
 
-              <div className="w-[420px] h-[420px] rounded-xl overflow-hidden flex items-center justify-center bg-white">
-                {imgUrl ? (
+              {/* 대표 이미지 박스 */}
+              <div className="w-[420px] h-[420px] rounded-xl overflow-hidden flex items-center justify-center bg-white relative mx-auto">
+                {images.length > 0 ? (
                   <img
-                    src={imgUrl || undefined}
+                    src={images[current]}
                     alt={post?.title || "상품 이미지"}
-                    className="max-h-[420px] w-auto object-contain"
+                    className="max-h-[420px] w-auto object-contain select-none"
+                    onError={(e) =>
+                      (e.currentTarget.style.visibility = "hidden")
+                    }
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-100" />
                 )}
+
+                {/* 이전/다음 화살표 */}
+                {images.length > 1 && (
+                  <>
+                    <button
+                      onClick={prev}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow"
+                      aria-label="이전 이미지"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      onClick={next}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow"
+                      aria-label="다음 이미지"
+                    >
+                      ›
+                    </button>
+                  </>
+                )}
               </div>
+
+              {/* 인디케이터 점 */}
+              {images.length > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  {images.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => go(idx)}
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        current === idx ? "bg-gray-800" : "bg-gray-300"
+                      }`}
+                      aria-label={`이미지 ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* 정보 */}
+          {/* 정보 영역 */}
           <div className="col-span-12 md:col-span-6">
             <div className="flex flex-col space-y-5">
               {categoryLabel && (
@@ -476,7 +597,7 @@ export default function UserProduct() {
                 </span>
               </div>
               {!isOwnProduct && (
-                <div className="pt-1">
+                <div className="pt-1 flex gap-3">
                   <button
                     onClick={handlePurchase}
                     className="cursor-pointer inline-flex items-center justify-center rounded-lg bg-rebay-blue text-white px-7 py-3 text-[15px] shadow hover:shadow-md transition-all font-semibold hover:opacity-90"
@@ -484,7 +605,7 @@ export default function UserProduct() {
                     구매하기
                   </button>
 
-                  {/* 채팅하기 버튼 추가 */}
+                  {/* 채팅하기 버튼 */}
                   <button
                     onClick={handleStartChat}
                     className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 px-7 py-3 text-[15px] font-semibold hover:bg-gray-50 transition"
@@ -510,7 +631,7 @@ export default function UserProduct() {
           </div>
         </section>
 
-        {/* 하단 */}
+        {/* 하단 영역 */}
         <section className="grid grid-cols-12 gap-6 mt-8">
           <div className="col-span-12 md:col-span-6">
             <div className="rounded-2xl border border-rebay-gray-400 p-5 h-full shadow min-h-[240px]">
@@ -567,7 +688,7 @@ export default function UserProduct() {
           </div>
         </section>
 
-        {tradeHistoryList.length != 0 && (
+        {tradeHistoryList.length !== 0 && (
           <section className="my-6 p-2 font-presentation w-full h-auto border border-rebay-gray-400 rounded-2xl">
             <TradeChart tradeHistoryList={tradeHistoryList} />
           </section>
