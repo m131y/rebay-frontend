@@ -48,7 +48,6 @@ const useFollowStore = create((set) => ({
       set({
         loading: false,
       });
-      console.log("followStore", data);
       return data;
     } catch (err) {
       set({

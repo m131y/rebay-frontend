@@ -2,8 +2,6 @@ import { EventSourcePolyfill } from "event-source-polyfill";
 import api from "./api";
 import StorageService from "./storage";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
-
 export const notificationApi = {
   // 목록 조회
   getList: () => api.get("/api/notifications"),
@@ -23,9 +21,11 @@ class NotificationStream {
     const token = StorageService.getAccessToken();
     if (!token || this.eventSource) return;
 
+    const baseURL = api.defaults.baseURL;
+
     // EventSourcePolyfill을 사용해 헤더에 토큰 전송
     this.eventSource = new EventSourcePolyfill(
-      `${API_URL}/api/notifications/stream`,
+      `${baseURL}/api/notifications/stream`,
       {
         headers: { Authorization: `Bearer ${token}` },
         heartbeatTimeout: 86400000, // 24시간 (필요시 조정)

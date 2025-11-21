@@ -51,7 +51,6 @@ const useStatisticsStore = create((set) => ({
         dailyTopKeywords: data || [],
         loading: false,
       });
-      console.log(data);
     } catch (err) {
       set({
         error:
@@ -86,7 +85,6 @@ const useStatisticsStore = create((set) => ({
       set({
         loading: false,
       });
-      console.log("추천", data);
       return data;
     } catch (err) {
       set({
@@ -106,7 +104,6 @@ const useStatisticsStore = create((set) => ({
       set({
         loading: false,
       });
-      console.log("시세", data);
       return data;
     } catch (err) {
       set({

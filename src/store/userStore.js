@@ -11,7 +11,6 @@ const useUserStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const userProfile = await userService.getUserProfile(userId);
-      console.log("userStore:", userProfile);
       set({
         userProfile,
         loading: false,
@@ -29,7 +28,6 @@ const useUserStore = create((set) => ({
     set({ loading: true, error: null });
     try {
       const data = await userService.updateProfile(userData);
-      console.log("userService:", data);
       set({
         loading: false,
       });

@@ -62,7 +62,6 @@ const EditProfile = () => {
 
   const handleToggleEnabled = () => {
     setFormData((prev) => ({ ...prev, enabled: !prev.enabled }));
-    console.log(formData);
   };
 
   const handleFileUploadClose = (newImageUrl) => {
