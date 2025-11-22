@@ -1,4 +1,3 @@
-// ✅ src/pages/userProduct.jsx (A버전 캐러셀)
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
@@ -11,7 +10,6 @@ import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 import useStatisticsStore from "../store/statisticsStore";
 import useAuthStore from "../store/authStore";
-import useReviewStore from "../store/reviewStore";
 import ReviewList from "../components/review/reviewList";
 import useFollowStore from "../store/followStore";
 import { preparePayment } from "../services/payment";
@@ -196,7 +194,7 @@ const timeAgo = (isoStr) => {
 };
 
 export default function UserProduct() {
-  const { postId } = useParams();
+  const { productId } = useParams();
   const navigate = useNavigate();
 
   const { user } = useAuthStore();
@@ -229,7 +227,7 @@ export default function UserProduct() {
     const fetchPost = async () => {
       try {
         setLoading(true);
-        const res = await api.get(`/api/posts/${postId}`); // ✅ 항상 조회수 +1
+        const res = await api.get(`/api/posts/${productId}`); // ✅ 항상 조회수 +1
         const data = res.data;
 
         if (!data) {
@@ -268,8 +266,8 @@ export default function UserProduct() {
           setImages([]);
         }
 
-        const rawLiked = localStorage.getItem(`liked:${postId}`);
-        const rawCount = localStorage.getItem(`likeCount:${postId}`);
+        const rawLiked = localStorage.getItem(`liked:${productId}`);
+        const rawCount = localStorage.getItem(`likeCount:${productId}`);
         setLiked(rawLiked ? JSON.parse(rawLiked) : false);
         setLikeCount(rawCount ? Number(rawCount) : 0);
       } catch (err) {
@@ -286,7 +284,7 @@ export default function UserProduct() {
       fetchedRef.current = true;
       fetchPost();
     }
-  }, [postId]);
+  }, [productId]);
 
   // 판매자 정보
   useEffect(() => {
@@ -316,8 +314,8 @@ export default function UserProduct() {
       const { isLiked, likeCount } = await postService.toggleLike(post.id);
       setLiked(isLiked);
       setLikeCount(likeCount);
-      localStorage.setItem(`liked:${postId}`, JSON.stringify(isLiked));
-      localStorage.setItem(`likeCount:${postId}`, String(likeCount));
+      localStorage.setItem(`liked:${productId}`, JSON.stringify(isLiked));
+      localStorage.setItem(`likeCount:${productId}`, String(likeCount));
     } catch (e) {
       console.error("좋아요 실패:", e);
     }

@@ -12,6 +12,7 @@ import useStatisticsStore from "../../store/statisticsStore";
 import Trade from "./Trade";
 import aiService from "../../services/ai";
 import { FiCpu } from "react-icons/fi";
+import auctionService from "../../services/auction";
 
 /** ========== 카테고리 계층 ========== */
 const CATEGORY_HIERARCHY = {
@@ -87,9 +88,17 @@ const parseHashtags = (input) =>
 
 const ProductCreate = ({ onCreated, goBack }) => {
   const navigate = useNavigate();
-  const { postId } = useParams();
-  const isEdit = Boolean(postId);
+  const { productId } = useParams();
+  const [postId, setPostId] = useState(0);
+  const [auctionId, setAuctionId] = useState(0);
+  const [data, setData] = useState();
+
+  const isEdit = Boolean(productId);
   const { getTradeHistory } = useStatisticsStore();
+
+  useEffect(() => {
+    console.log(productId);
+  }, []);
 
   /** ========== 기본 Form 상태 ========== */
   const [form, setForm] = useState({
@@ -97,12 +106,22 @@ const ProductCreate = ({ onCreated, goBack }) => {
     price: "",
     finalCategoryCode: DEFAULT_LARGE_CODE,
     content: "",
+    startTime: "",
+    endTime: "",
   });
 
   /** ========== 이미지 배열 상태 (다중 업로드) ========== */
   // images: { id, preview, url, file? }[]
   const [images, setImages] = useState([]);
   const dragIndexRef = useRef(null);
+
+  // 상품 타입
+  const PRODUCT_TYPE = {
+    GENERAL: "GENERAL",
+    AUCTION: "AUCTION",
+  };
+
+  const [productType, setProductType] = useState(PRODUCT_TYPE.GENERAL);
 
   /** 카테고리 */
   const [selectedLgCode, setSelectedLgCode] = useState(DEFAULT_LARGE_CODE);
@@ -126,29 +145,100 @@ const ProductCreate = ({ onCreated, goBack }) => {
 
   const titleCount = useMemo(() => form.title.length, [form.title]);
 
-  const onChange = (e) =>
-    setForm((s) => ({ ...s, [e.target.name]: e.target.value }));
+  const handleTypeChange = (type) => {
+    if (isEdit && type !== productType) {
+      alert("수정 중에는 상품 타입을 변경할 수 없습니다.");
+      return;
+    }
+    setProductType(type);
+  };
 
-  /** 🔥 EDIT 모드: 기존 상품 로딩 */
+  const TabButton = ({ type, icon, label }) => {
+    const isActive = productType === type;
+
+    // 활성화 상태에 따른 스타일 정의
+    // 버튼 크기를 유지하면서 컨테이너 역할을 합니다.
+    const baseClasses =
+      "flex flex-col items-center justify-center p-6 text-sm font-semibold rounded-xl transition-all duration-200 w-1/2 cursor-pointer border-4";
+    const activeClasses =
+      "bg-blue-50 border-rebay-blue text-rebay-blue shadow scale-[1.02]";
+    const inactiveClasses =
+      "bg-white border-gray-200 text-gray-700 hover:bg-gray-50";
+
+    return (
+      <div
+        onClick={() => handleTypeChange(type)}
+        className={`${baseClasses} ${
+          isActive ? activeClasses : inactiveClasses
+        }`}
+      >
+        <div className="mb-3">{icon}</div>
+        <span className="text-lg font-bold">{label}</span>
+        <span className="text-xs mt-1 text-gray-500">클릭하여 선택</span>
+      </div>
+    );
+  };
+
+  const onChange = (e) => {
+    const { name, value, type } = e.target;
+    const newValue =
+      type === "number" ? (value === "" ? "" : Number(value)) : value;
+
+    setForm((prevForm) => ({
+      ...prevForm,
+      [name]: newValue,
+    }));
+  };
+
+  /** EDIT 모드: 기존 상품 로딩 */
   useEffect(() => {
     if (!isEdit) return;
+
     (async () => {
+      let loadedData = null;
+      let type = null;
+      let errorOccurred = false;
+
       try {
-        const data = await postService.getPost(postId);
+        loadedData = await postService.getPost(productId);
+        type = PRODUCT_TYPE.GENERAL;
+      } catch (e) {
+        try {
+          loadedData = await auctionService.getAuction(productId);
+          type = PRODUCT_TYPE.AUCTION;
+        } catch (e) {
+          console.error("상품 정보를 불러오지 못했습니다. ID:", productId, e);
+          setError("상품 정보를 불러오지 못했습니다. ID를 확인하세요.");
+          errorOccurred = true;
+        }
+      }
+
+      if (loadedData && type) {
+        setProductType(type);
+        setData(loadedData);
+
+        if (type === PRODUCT_TYPE.GENERAL) {
+          setPostId(productId);
+          setAuctionId(0);
+        } else {
+          setAuctionId(productId);
+          setPostId(0);
+        }
 
         setForm({
-          title: data.title ?? "",
-          price: data.price ?? "",
-          content: data.content ?? "",
-          finalCategoryCode: data.categoryCode ?? DEFAULT_LARGE_CODE,
+          title: loadedData.title ?? "",
+          price: loadedData.price ?? loadedData.start_price ?? "",
+          content: loadedData.content ?? "",
+          finalCategoryCode: loadedData.categoryCode ?? DEFAULT_LARGE_CODE,
+          startTime: loadedData.startTime ?? "",
+          endTime: loadedData.endTime ?? "",
         });
 
-        /** 이미지 여러 장 로딩 */
         const urlList =
-          Array.isArray(data.imageUrls) && data.imageUrls.length
-            ? data.imageUrls
-            : data.imageUrl
-            ? [data.imageUrl]
+          Array.isArray(loadedData.imageUrls) && loadedData.imageUrls.length
+            ? loadedData.imageUrls
+            : loadedData.imageUrl
+            ? [loadedData.imageUrl]
             : [];
 
         const resolved = await Promise.all(
@@ -185,14 +275,17 @@ const ProductCreate = ({ onCreated, goBack }) => {
         setImages(resolved);
 
         setHashtagsInput(
-          (data.hashtags || []).map((h) => h.name ?? h).join(" ")
+          (loadedData.hashtags || []).map((h) => h.name ?? h).join(" ")
         );
-      } catch (e) {
-        console.error(e);
-        setError("상품 정보를 불러오지 못했습니다.");
+      }
+
+      if (errorOccurred) {
+        setError(
+          "상품 정보를 불러오지 못했습니다. 유효하지 않은 상품 ID입니다."
+        );
       }
     })();
-  }, [isEdit, postId]);
+  }, [isEdit, productId]);
 
   /** 카테고리 final */
   useEffect(() => {
@@ -427,22 +520,52 @@ const ProductCreate = ({ onCreated, goBack }) => {
     const payload = {
       title: form.title.trim(),
       content: form.content.trim(),
-      price: Number(form.price),
+      startPrice: Number(form.price),
       categoryCode: form.finalCategoryCode,
       imageUrl: imgUrls[0] || null,
       imageUrls: imgUrls,
       hashtags: parseHashtags(hashtagsInput),
+      startTime: form.startTime,
+      endTime: form.endTime,
     };
 
     setSubmitting(true);
 
     try {
       if (isEdit) {
-        await postService.updatePost(postId, payload);
-        navigate(`/products/${postId}`);
+        if (productType === "GENERAL") {
+          const PostData = {
+            title: payload.title,
+            content: payload.content,
+            price: payload.startPrice,
+            categoryCode: payload.categoryCode,
+            imageUrl: payload.imageUrl,
+            imageUrls: payload.imageUrls,
+            hashtags: payload.hashtags,
+          };
+          await postService.updatePost(postId, PostData);
+          navigate(`/products/${postId}`);
+        } else {
+          await auctionService.updateAuction(auctionId, payload);
+          navigate(`/auctions/${auctionId}`);
+        }
       } else {
-        const data = await postService.createPost(payload);
-        navigate(`/products/${data.id}`);
+        if (productType === "GENERAL") {
+          const PostData = {
+            title: payload.title,
+            content: payload.content,
+            price: payload.startPrice,
+            categoryCode: payload.categoryCode,
+            imageUrl: payload.imageUrl,
+            imageUrls: payload.imageUrls,
+            hashtags: payload.hashtags,
+          };
+          const data = await postService.createPost(PostData);
+          navigate(`/products/${data.id}`);
+        } else {
+          const data = await auctionService.createAuction(payload);
+          navigate(`/auctions/${data.id}`);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -459,12 +582,18 @@ const ProductCreate = ({ onCreated, goBack }) => {
       form.price ||
       form.content ||
       hashtagsInput ||
-      images.length > 0
+      images.length > 0 ||
+      form.startTime ||
+      form.endTime
     ) {
       if (!window.confirm("작성 중인 내용이 있습니다. 취소할까요?")) return;
     }
 
-    navigate(isEdit ? `/products/${postId}` : "/");
+    if (productType === "GENERAL") {
+      navigate(isEdit ? `/products/${postId}` : "/");
+    } else {
+      navigate(isEdit ? `/auctions/${auctionId}` : "/");
+    }
   };
 
   /** UI */
@@ -485,6 +614,19 @@ const ProductCreate = ({ onCreated, goBack }) => {
               목록
             </button>
           )}
+        </div>
+
+        <div className="bg-white p-4 rounded-xl shadow-sm flex space-x-4 mb-10">
+          <TabButton
+            type={PRODUCT_TYPE.GENERAL}
+            // icon={<ShoppingCart className="w-8 h-8" />}
+            label="일반 상품 등록"
+          />
+          <TabButton
+            type={PRODUCT_TYPE.AUCTION}
+            // icon={<Gavel className="w-8 h-8" />}
+            label="경매 상품 등록"
+          />
         </div>
 
         <form onSubmit={onSubmit} className="space-y-8">
@@ -803,6 +945,36 @@ const ProductCreate = ({ onCreated, goBack }) => {
               placeholder="예) 420000"
             />
           </section>
+
+          {/* 경매시각 */}
+          {productType === "AUCTION" && (
+            <section>
+              <label className="block text-sm font-medium mb-2">
+                경매 시각
+              </label>
+              <div>
+                <input
+                  name="startTime"
+                  type="datetime-local"
+                  value={form.startTime}
+                  onChange={onChange}
+                  required
+                  className="w-[240px] rounded-lg border border-rebay-gray-400 px-3 py-2 mr-10"
+                  placeholder="0000-00-00 00:00"
+                />
+
+                <input
+                  name="endTime"
+                  type="datetime-local"
+                  value={form.endTime}
+                  onChange={onChange}
+                  required
+                  className="w-[240px] rounded-lg border border-rebay-gray-400 px-3 py-2"
+                  placeholder="0000-00-00 00:00"
+                />
+              </div>
+            </section>
+          )}
 
           {/* 설명 */}
           <section>
