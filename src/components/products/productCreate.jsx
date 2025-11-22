@@ -8,7 +8,8 @@ import MainLayout from "../layout/MainLayout";
 import Header from "../layout/Header";
 import Footer from "../layout/Footer";
 import api from "../../services/api";
-
+import useStatisticsStore from "../../store/statisticsStore";
+import Trade from "./Trade";
 import aiService from "../../services/ai";
 import { FiCpu } from "react-icons/fi";
 
@@ -88,6 +89,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
   const navigate = useNavigate();
   const { postId } = useParams();
   const isEdit = Boolean(postId);
+  const { getTradeHistory } = useStatisticsStore();
 
   /** ========== 기본 Form 상태 ========== */
   const [form, setForm] = useState({
@@ -106,6 +108,11 @@ const ProductCreate = ({ onCreated, goBack }) => {
   const [selectedLgCode, setSelectedLgCode] = useState(DEFAULT_LARGE_CODE);
   const [selectedMdCode, setSelectedMdCode] = useState("");
   const [selectedSmCode, setSelectedSmCode] = useState("");
+
+  // 시세
+  const [tradeHistory, setTradeHistory] = useState([]);
+  const [showTradeHistory, setShowTradeHistory] = useState(false);
+  const [avgPrice, setAvgPrice] = useState(0);
 
   /** 기타 상태 */
   const [hashtagsInput, setHashtagsInput] = useState("");
@@ -202,6 +209,47 @@ const ProductCreate = ({ onCreated, goBack }) => {
     const md = mdOptions[selectedMdCode];
     return md?.children || {};
   }, [selectedMdCode, mdOptions]);
+
+  // 대분류 변경 핸들러
+  const handleLgChange = (e) => {
+    const newLgCode = e.target.value;
+    setSelectedLgCode(newLgCode);
+    setSelectedMdCode(""); // 중분류 초기화
+    setSelectedSmCode(""); // 소분류 초기화
+    setError(null);
+  };
+  // 중분류 변경 핸들러
+  const handleMdChange = (e) => {
+    const newMdCode = e.target.value;
+    setSelectedMdCode(newMdCode);
+    setSelectedSmCode(""); // 소분류 초기화
+    setError(null);
+  };
+  // 소분류 변경 핸들러
+  const handleSmChange = (e) => {
+    const newSmCode = e.target.value;
+    setSelectedSmCode(newSmCode);
+    setError(null);
+  };
+
+  const handleTradeHistory = async () => {
+    setTradeHistory(await getTradeHistory(form.finalCategoryCode));
+    setShowTradeHistory(true);
+  };
+
+  useEffect(() => {
+    const totalPriceSum = tradeHistory.reduce((sum, history) => {
+      const price = Number(history.price);
+      return sum + (isNaN(price) ? 0 : price);
+    }, 0);
+
+    const avg = totalPriceSum / tradeHistory.length;
+    setAvgPrice(Math.round(avg));
+  }, [tradeHistory]);
+
+  const recommendPrice = () => {
+    setForm((s) => ({ ...s, price: avgPrice }));
+  };
 
   /** ───────────────────────────────
    *  🔥 이미지 업로드 (MULTI)
@@ -487,7 +535,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
                 {images.map((img, idx) => (
                   <div
                     key={img.id}
-                    className="group relative border rounded-lg overflow-hidden bg-gray-50 cursor-grab active:cursor-grabbing"
+                    className="group relative border border-rebay-gray-400 rounded-lg overflow-hidden bg-gray-50 cursor-grab active:cursor-grabbing"
                     draggable
                     onDragStart={onDragStart(idx)}
                     onDragOver={onDragOver}
@@ -528,7 +576,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
           <section>
             <label
               htmlFor="category-select"
-              className="block text-sm font-semibold mb-3 text-gray-700"
+              className="block text-sm font-semibold mb-3 "
             >
               카테고리 선택 (필수)
             </label>
@@ -539,13 +587,9 @@ const ProductCreate = ({ onCreated, goBack }) => {
                 <select
                   name="largeCategory"
                   value={selectedLgCode}
-                  onChange={(e) => {
-                    setSelectedLgCode(e.target.value);
-                    setSelectedMdCode("");
-                    setSelectedSmCode("");
-                  }}
+                  onChange={handleLgChange}
                   required
-                  className="w-full rounded-xl border border-gray-300 px-4 py-2.5"
+                  className="w-full rounded-xl border border-rebay-gray-400 px-4 appearance-none py-2.5 pr-10 bg-white text-base focus:outline-none focus:ring-1 focus:ring-sky-500 transition"
                 >
                   {Object.entries(CATEGORY_HIERARCHY).map(([code, data]) => (
                     <option key={code} value={code}>
@@ -553,6 +597,20 @@ const ProductCreate = ({ onCreated, goBack }) => {
                     </option>
                   ))}
                 </select>
+                <svg
+                  className="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
               </div>
 
               {/* 중분류 */}
@@ -560,12 +618,13 @@ const ProductCreate = ({ onCreated, goBack }) => {
                 <select
                   name="mediumCategory"
                   value={selectedMdCode}
-                  onChange={(e) => {
-                    setSelectedMdCode(e.target.value);
-                    setSelectedSmCode("");
-                  }}
+                  onChange={handleMdChange}
                   disabled={Object.keys(mdOptions).length === 0}
-                  className="w-full rounded-xl border px-4 py-2.5"
+                  className={`w-full rounded-xl border px-4 appearance-none py-2.5 pr-10 bg-white text-base transition ${
+                    Object.keys(mdOptions).length === 0
+                      ? "border-gray-200 text-gray-400"
+                      : "border-rebay-gray-400 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  }`}
                 >
                   <option value="">
                     {Object.keys(mdOptions).length === 0
@@ -578,6 +637,20 @@ const ProductCreate = ({ onCreated, goBack }) => {
                     </option>
                   ))}
                 </select>
+                <svg
+                  className="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
               </div>
 
               {/* 소분류 */}
@@ -585,9 +658,13 @@ const ProductCreate = ({ onCreated, goBack }) => {
                 <select
                   name="smallCategory"
                   value={selectedSmCode}
-                  onChange={(e) => setSelectedSmCode(e.target.value)}
+                  onChange={handleSmChange}
                   disabled={Object.keys(smOptions).length === 0}
-                  className="w-full rounded-xl border px-4 py-2.5"
+                  className={`w-full rounded-xl border px-4 appearance-none py-2.5 pr-10 bg-white text-base transition ${
+                    Object.keys(smOptions).length === 0
+                      ? "border-gray-200 text-gray-400"
+                      : "border-rebay-gray-400 focus:outline-none focus:ring-1 focus:ring-sky-500"
+                  }`}
                 >
                   <option value="">
                     {Object.keys(smOptions).length === 0
@@ -600,8 +677,96 @@ const ProductCreate = ({ onCreated, goBack }) => {
                     </option>
                   ))}
                 </select>
+                <svg
+                  className="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M19 9l-7 7-7-7"
+                  />
+                </svg>
               </div>
+              <button
+                type="button"
+                onClick={handleTradeHistory}
+                className="cursor-pointer flex bg-rebay-blue w-[100px] rounded-xl text-white font-bold justify-center items-center"
+              >
+                <div>시세확인</div>
+              </button>
             </div>
+          </section>
+
+          {/* 시세 제안 창 */}
+          <section className="relative">
+            {showTradeHistory && (
+              <div className="flex flex-col mb-5 absolute z-10 top-full right-0 mt-2 w-[300px]">
+                <div className="flex flex-col space-y-1 bg-white rounded-xl shadow-md transition-all border border-rebay-gray-400 h-auto p-3">
+                  <div className="flex justify-between p-1 font-bold text-lg">
+                    <div>평균 거래 시세</div>
+                    <div>
+                      <FiX
+                        className="cursor-pointer"
+                        onClick={() => setShowTradeHistory(false)}
+                      />
+                    </div>
+                  </div>
+                  <div className="flex justify-between p-1 rounded-md bg-rebay-gray-100 text-rebay-gray-600">
+                    <label className="ml-1 ">총 거래 건수</label>
+                    <div className="mr-1">{tradeHistory.length}건</div>
+                  </div>
+                  {tradeHistory.length > 0 ? (
+                    <div className="flex flex-col p-1 h-[70px] justify-center text-white rounded-sm text-[10px] bg-rebay-blue">
+                      <label className="ml-1">평균 가격</label>
+                      <div className=" flex justify-between">
+                        <div className="text-2xl ml-1 font-bold">
+                          {avgPrice.toLocaleString("ko-KR")} 원
+                        </div>
+                        <button
+                          type="button"
+                          onClick={recommendPrice}
+                          className="cursor-pointer text-xs border border-white bg-white/20 text-white rounded-full h-[30px] w-[70px] mr-2"
+                        >
+                          평균가격 선택
+                        </button>
+                      </div>
+                      <div className="text-[10px] ml-1">*최근 판매가 기준</div>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col p-1 h-[70px] justify-center text-white rounded-sm bg-rebay-blue">
+                      <div className=" flex justify-between items-center">
+                        <div className="text-4xl ml-3 font-bold">텅</div>
+                        <button
+                          type="button"
+                          className="cursor-pointer text-xs border border-white bg-white/20 text-white rounded-full h-[30px] w-[70px] mr-2"
+                        >
+                          평균가격 선택
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                  <div className="p-1">
+                    <label>거래내역</label>
+                    {tradeHistory.length > 0 ? (
+                      <div className="text-xs text-rebay-gray-600 h-full max-h-[80px] overflow-y-scroll border p-1 rounded-sm border-gray-300  bg-gray-100 ">
+                        {tradeHistory.map((history) => (
+                          <Trade history={history} />
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="text-xs text-rebay-gray-600 h-full max-h-[80px] border p-1 rounded-sm border-gray-300  bg-gray-100 ">
+                        거래 내역이 없어요
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
           </section>
 
           {/* 상품명 */}
@@ -614,7 +779,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
                 onChange={onChange}
                 required
                 maxLength={40}
-                className="w-full rounded-lg border px-3 py-2"
+                className="w-full rounded-lg border border-rebay-gray-400 px-3 py-2"
                 placeholder="상품명을 입력해 주세요."
               />
               <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
@@ -634,7 +799,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
               value={form.price}
               onChange={onChange}
               required
-              className="w-[240px] rounded-lg border px-3 py-2"
+              className="w-[240px] rounded-lg border border-rebay-gray-400 px-3 py-2"
               placeholder="예) 420000"
             />
           </section>
@@ -648,7 +813,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
               onChange={onChange}
               required
               rows={8}
-              className="w-full rounded-lg border px-3 py-2"
+              className="w-full rounded-lg border border-rebay-gray-400 px-3 py-2"
               placeholder={`• 브랜드, 모델명, 구매 시기, 하자 유무 등\n• 연락처 등 개인정보는 제한될 수 있어요.`}
             />
           </section>
@@ -659,7 +824,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
             <input
               value={hashtagsInput}
               onChange={(e) => setHashtagsInput(e.target.value)}
-              className="w-full rounded-lg border px-3 py-2"
+              className="w-full rounded-lg border border-rebay-gray-400 px-3 py-2"
               placeholder="#아이패드 #64GB"
             />
 
@@ -681,7 +846,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
               type="button"
               onClick={handleCancel}
               disabled={submitting || uploading}
-              className="px-4 py-2 rounded-lg border hover:bg-gray-50"
+              className="cursor-pointer px-4 py-2 rounded-lg border border-rebay-gray-400 hover:bg-gray-50"
             >
               취소
             </button>
@@ -689,7 +854,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
             <button
               type="submit"
               disabled={submitting || uploading}
-              className="px-5 py-2 rounded-lg bg-rebay-blue text-white hover:opacity-90"
+              className="cursor-pointer px-5 py-2 rounded-lg bg-rebay-blue text-white hover:opacity-90"
             >
               {isEdit
                 ? submitting

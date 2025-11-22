@@ -1,3 +1,4 @@
+// src/pages/products.jsx
 import { useEffect, useMemo, useState } from "react";
 import Footer from "../components/layout/Footer";
 import Header from "../components/layout/Header";
@@ -133,12 +134,14 @@ const Products = () => {
   const [selectedLgCode, setSelectedLgCode] = useState(DEFAULT_LARGE_CODE);
   const [selectedMdCode, setSelectedMdCode] = useState("");
   const [selectedSmCode, setSelectedSmCode] = useState("");
-  const [submitting, setSubmitting] = useState(false);
 
   const [sort, setSort] = useState(SORTS.LATEST);
   const [page, setPage] = useState(1);
 
   const [finalCode, setFinalCode] = useState("ALL");
+
+  // ✅ 기본값 true: 처음엔 판매완료 제외
+  const [excludeSold, setExcludeSold] = useState(true);
 
   const mdOptions = useMemo(() => {
     const lg = CATEGORY_HIERARCHY[selectedLgCode];
@@ -153,8 +156,8 @@ const Products = () => {
   const handleLgChange = (e) => {
     const newLgCode = e.target.value;
     setSelectedLgCode(newLgCode);
-    setSelectedMdCode(""); // 중분류 초기화
-    setSelectedSmCode(""); // 소분류 초기화
+    setSelectedMdCode("");
+    setSelectedSmCode("");
     setError(null);
     setFinalCode(newLgCode);
   };
@@ -162,7 +165,7 @@ const Products = () => {
   const handleMdChange = (e) => {
     const newMdCode = e.target.value;
     setSelectedMdCode(newMdCode);
-    setSelectedSmCode(""); // 소분류 초기화
+    setSelectedSmCode("");
     setError(null);
     setFinalCode(newMdCode || selectedLgCode);
   };
@@ -201,17 +204,21 @@ const Products = () => {
 
   useEffect(() => {
     setPage(1);
-  }, [finalCode, sort]);
+  }, [finalCode, sort, excludeSold]);
 
   const processed = useMemo(() => {
     let rows = allPosts;
 
+    // ✅ excludeSold 가 true면 SOLD 제거
+    if (excludeSold) {
+      rows = rows.filter((r) => r?.status !== "SOLD");
+    }
+
+    // 카테고리 필터
     if (finalCode && finalCode !== "ALL") {
       rows = rows.filter((r) => {
         const postCategoryCode = r?.categoryCode?.toString();
-
         if (!postCategoryCode) return false;
-
         return postCategoryCode.startsWith(finalCode);
       });
     }
@@ -242,7 +249,7 @@ const Products = () => {
     }
 
     return rows;
-  }, [allPosts, finalCode, sort]);
+  }, [allPosts, finalCode, sort, excludeSold]);
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
   const paged = useMemo(() => {
@@ -258,17 +265,29 @@ const Products = () => {
       <Header />
       <main className="my-[70px] font-presentation">
         <section className="mx-auto w-full max-w-[1080px] px-3">
-          <div
-            className="flex items-start
-           justify-between mb-4"
-          >
-            <h2 className="font-presentation py-6 text-[22px] font-bold">
-              상품보기
-            </h2>
+          <div className="flex items-start justify-between mb-4">
+            {/* 제목 + 체크박스 묶음 */}
+            <div className="flex flex-col gap-1">
+              <h2 className="font-presentation py-6 text-[22px] font-bold">
+                상품보기
+              </h2>
+              {/* ✅ 기본은 판매완료 제외, 체크 시 포함 */}
+              <label className="flex items-center gap-1 text-xs text-gray-500 ml-1">
+                <input
+                  type="checkbox"
+                  className="w-3 h-3"
+                  checked={!excludeSold}
+                  onChange={(e) => setExcludeSold(!e.target.checked)}
+                />
+                <span>판매완료 상품 포함</span>
+              </label>
+            </div>
+
             <div className="flex flex-col justify-end items-center gap-2">
               <div className="flex items-center justify-end w-[960px] mx-auto p-3 font-presentation">
                 <section className="flex items-center justify-center">
                   <div className="flex flex-row items-center justify-center gap-3">
+                    {/* 대분류 */}
                     <div className="relative flex-1">
                       <select
                         name="largeCategory"
@@ -300,6 +319,8 @@ const Products = () => {
                         />
                       </svg>
                     </div>
+
+                    {/* 중분류 */}
                     <div className="relative flex-1">
                       <select
                         name="mediumCategory"
@@ -338,6 +359,8 @@ const Products = () => {
                         />
                       </svg>
                     </div>
+
+                    {/* 소분류 */}
                     <div className="relative flex-1">
                       <select
                         name="smallCategory"
@@ -380,6 +403,8 @@ const Products = () => {
                 </section>
                 {error && <p className="text-sm text-red-600">{error}</p>}
               </div>
+
+              {/* 정렬 버튼 */}
               <div className="w-full flex justify-end px-3">
                 <div>
                   <button
@@ -388,7 +413,7 @@ const Products = () => {
                       sort === SORTS.LATEST ? "bg-rebay-blue text-white" : ""
                     }`}
                   >
-                    최신
+                    최신순
                   </button>
                   <button
                     onClick={() => setSort(SORTS.PRICE_ASC)}
@@ -396,7 +421,7 @@ const Products = () => {
                       sort === SORTS.PRICE_ASC ? "bg-rebay-blue text-white" : ""
                     }`}
                   >
-                    가격 오름차순
+                    높은 가격순
                   </button>
                   <button
                     onClick={() => setSort(SORTS.PRICE_DESC)}
@@ -406,7 +431,7 @@ const Products = () => {
                         : ""
                     }`}
                   >
-                    가격 내림차순
+                    낮은 가격순
                   </button>
                   <button
                     onClick={() => setSort(SORTS.TITLE_ASC)}

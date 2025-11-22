@@ -368,7 +368,7 @@ export default function Search() {
                       sort === SORTS.LATEST ? "bg-rebay-blue text-white" : ""
                     }`}
                   >
-                    최신
+                    최신순
                   </button>
                   <button
                     onClick={() => setSort(SORTS.PRICE_ASC)}
@@ -376,7 +376,7 @@ export default function Search() {
                       sort === SORTS.PRICE_ASC ? "bg-rebay-blue text-white" : ""
                     }`}
                   >
-                    가격 오름차순
+                    높은 가격순
                   </button>
                   <button
                     onClick={() => setSort(SORTS.PRICE_DESC)}
@@ -386,7 +386,7 @@ export default function Search() {
                         : ""
                     }`}
                   >
-                    가격 내림차순
+                    낮은 가격순
                   </button>
                   <button
                     onClick={() => setSort(SORTS.TITLE_ASC)}

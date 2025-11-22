@@ -1,3 +1,4 @@
+// src/components/products/product.jsx
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaImage } from "react-icons/fa";
@@ -14,6 +15,9 @@ const Product = ({ post, onClick, variant = "default" }) => {
   const navigate = useNavigate();
   const [signedUrl, setSignedUrl] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // 🔹 판매 상태 (백엔드 enum: ON_SALE, SOLD)
+  const isSold = post?.status === "SOLD";
 
   useEffect(() => {
     let cancelled = false;
@@ -55,7 +59,7 @@ const Product = ({ post, onClick, variant = "default" }) => {
 
   const variants = {
     compact: {
-      wrapper: "w-[130px] h-[230px] ",
+      wrapper: "w-[130px] h-[230px]",
       imageHeight: "h-[120px]",
       titleText: "font-semibold text-[11px]",
       priceText: "text-[10px] font-semibold",
@@ -63,7 +67,7 @@ const Product = ({ post, onClick, variant = "default" }) => {
       iconSize: 50,
     },
     default: {
-      wrapper: "w-[190px] h-[320px] ",
+      wrapper: "w-[190px] h-[320px]",
       imageHeight: "h-[200px]",
       titleText: "font-semibold text-[15px]",
       priceText: "text-[14px] font-semibold",
@@ -75,7 +79,7 @@ const Product = ({ post, onClick, variant = "default" }) => {
   const currentStyle = variants[variant] || variants.default;
 
   return (
-    <div className={`${currentStyle.wrapper}`}>
+    <div className={currentStyle.wrapper}>
       <div
         role="button"
         tabIndex={0}
@@ -87,8 +91,9 @@ const Product = ({ post, onClick, variant = "default" }) => {
                    hover:shadow-md hover:-translate-y-[2px] transition-transform text-left
                    focus:outline-none focus:ring-2 focus:ring-blue-300"
       >
+        {/* 🔹 이미지 영역 */}
         <div
-          className={`m-3 ${currentStyle.imageHeight} bg-gray-200 rounded-[10px] overflow-hidden flex items-center justify-center`}
+          className={`relative m-3 ${currentStyle.imageHeight} bg-gray-200 rounded-[10px] overflow-hidden flex items-center justify-center`}
         >
           {signedUrl ? (
             <img
@@ -100,12 +105,25 @@ const Product = ({ post, onClick, variant = "default" }) => {
             />
           ) : (
             <FaImage
-              size={`${currentStyle.iconSize}`}
+              size={currentStyle.iconSize}
               className="text-rebay-gray-300"
             />
           )}
+
+          {/* 🔹 판매완료 오버레이 (SOLD일 때만) */}
+          {isSold && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              {/* 배경 살짝 어둡게 */}
+              <div className="absolute inset-0 bg-black/20" />
+              {/* 동그란 배지 */}
+              <div className="relative flex items-center justify-center w-[86px] h-[86px] rounded-full bg-black/60 text-white text-xs font-semibold">
+                판매완료
+              </div>
+            </div>
+          )}
         </div>
 
+        {/* 🔹 텍스트 영역 */}
         <div className="mx-3 mb-3">
           <div
             className={`${currentStyle.titleText} leading-snug line-clamp-1`}
