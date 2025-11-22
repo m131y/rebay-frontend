@@ -25,8 +25,23 @@ const UserTransactions = () => {
 
   const [activeTab, setActiveTab] = useState("buyer");
 
-  const [buyerTransactions, setBuyerTransactions] = useState([]);
-  const [sellerTransactions, setSellerTransactions] = useState([]);
+  // 페이징 상태
+  const [buyerPage, setBuyerPage] = useState(0);
+  const [sellerPage, setSellerPage] = useState(0);
+  const size = 10;
+
+  // Page 객체 저장
+  const [buyerTransactions, setBuyerTransactions] = useState({
+    content: [],
+    totalPages: 0,
+    number: 0,
+  });
+  const [sellerTransactions, setSellerTransactions] = useState({
+    content: [],
+    totalPages: 0,
+    number: 0,
+  });
+
   const [sellerInfo, setSellerInfo] = useState(null);
 
   const [loading, setLoading] = useState(false);
@@ -70,8 +85,8 @@ const UserTransactions = () => {
   const loadBuyerTransactions = async () => {
     try {
       setLoading(true);
-      const data = await getBuyerTransactions(userId);
-      setBuyerTransactions(data || []);
+      const data = await getBuyerTransactions(userId, buyerPage, size);
+      setBuyerTransactions(data);
     } catch (err) {
       console.error(err);
       alert("구매 내역 조회 실패");
@@ -87,29 +102,31 @@ const UserTransactions = () => {
 
       const [userData, transactionData] = await Promise.all([
         userService.getUserProfile(userId),
-        getSellerTransactions(userId),
+        getSellerTransactions(userId, sellerPage, size),
       ]);
 
       setSellerInfo(userData);
-      setSellerTransactions(transactionData || []);
+      setSellerTransactions(transactionData);
 
       // 판매 통계 계산
-      const pending = transactionData.filter((t) => t.status === "PAID").length;
-      const completed = transactionData.filter(
-        (t) => t.status === "COMPLETED"
-      ).length;
+      if (sellerPage === 0) {
+        const list = transactionData.content ?? [];
 
-      const totalEarnings =
-        transactionData
-          .filter((t) => t.status === "COMPLETED")
-          .reduce((sum, t) => sum + t.amount, 0) ?? 0;
+        const pending = list.filter((t) => t.status === "PAID").length;
+        const completed = list.filter((t) => t.status === "COMPLETED").length;
 
-      setStats({
-        total: transactionData.length,
-        pending,
-        completed,
-        totalEarnings,
-      });
+        const totalEarnings =
+          list
+            .filter((t) => t.status === "COMPLETED")
+            .reduce((sum, t) => sum + t.amount, 0) ?? 0;
+
+        setStats({
+          total: transactionData.totalElements ?? list.length,
+          pending,
+          completed,
+          totalEarnings,
+        });
+      }
     } catch (err) {
       console.error(err);
       alert("판매 내역 조회 실패");
@@ -120,9 +137,23 @@ const UserTransactions = () => {
 
   // 탭 변경에 따라 로딩
   useEffect(() => {
-    if (activeTab === "buyer") loadBuyerTransactions();
-    else loadSellerTransactions();
+    if (activeTab === "buyer") {
+      setBuyerPage(0);
+      loadBuyerTransactions();
+    } else {
+      setSellerPage(0);
+      loadSellerTransactions();
+    }
   }, [activeTab, userId]);
+
+  // 페이징 이동 시 로드
+  useEffect(() => {
+    if (activeTab === "buyer") loadBuyerTransactions();
+  }, [buyerPage]);
+
+  useEffect(() => {
+    if (activeTab === "seller") loadSellerTransactions();
+  }, [sellerPage]);
 
   // 구매자 수령 확인
   const handleConfirmReceipt = async (transactionId, e) => {
@@ -136,7 +167,7 @@ const UserTransactions = () => {
       setConfirming(transactionId);
       await confirmReceipt(transactionId, parseInt(userId));
       alert("상품 수령이 확인되었습니다.");
-      await loadBuyerTransactions();
+      loadBuyerTransactions();
     } catch (err) {
       console.error(err);
       alert("수령 확인 실패");
@@ -308,7 +339,7 @@ const UserTransactions = () => {
             <div className="flex justify-center items-center py-20 text-xl">
               로딩 중...
             </div>
-          ) : transactions.length === 0 ? (
+          ) : transactions.content.length === 0 ? (
             <div className="bg-white p-12 rounded-lg shadow text-center">
               <p className="text-gray-500 text-lg mb-6">
                 {activeTab === "buyer"
@@ -323,10 +354,91 @@ const UserTransactions = () => {
               </button>
             </div>
           ) : (
-            transactions
-              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-              .map((t) => renderTransactionCard(t, activeTab === "buyer"))
+            transactions.content.map((t) =>
+              renderTransactionCard(t, activeTab === "buyer")
+            )
           )}
+        </div>
+
+        {/* 페이징 버튼 */}
+        <div className="flex flex-col items-center my-8 space-y-4">
+          {/* 현재 페이지 표시 */}
+          {(activeTab === "buyer"
+            ? buyerTransactions.totalPages
+            : sellerTransactions.totalPages) > 0 && (
+            <div className="text-gray-700 font-medium text-lg">
+              {activeTab === "buyer"
+                ? `${buyerTransactions.number + 1} / ${
+                    buyerTransactions.totalPages
+                  }`
+                : `${sellerTransactions.number + 1} / ${
+                    sellerTransactions.totalPages
+                  }`}
+            </div>
+          )}
+
+          {/* 이전 / 다음 버튼 */}
+          <div className="flex space-x-4">
+            <button
+              disabled={
+                activeTab === "buyer"
+                  ? buyerTransactions.number === 0
+                  : sellerTransactions.number === 0
+              }
+              onClick={() =>
+                activeTab === "buyer"
+                  ? setBuyerPage((p) => Math.max(p - 1, 0))
+                  : setSellerPage((p) => Math.max(p - 1, 0))
+              }
+              className={`px-4 py-2 rounded-lg ${
+                activeTab === "buyer"
+                  ? buyerTransactions.number === 0
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                  : sellerTransactions.number === 0
+                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
+            >
+              이전
+            </button>
+
+            <button
+              disabled={
+                activeTab === "buyer"
+                  ? buyerTransactions.number + 1 >= buyerTransactions.totalPages
+                  : sellerTransactions.number + 1 >=
+                    sellerTransactions.totalPages
+              }
+              onClick={() =>
+                activeTab === "buyer"
+                  ? setBuyerPage((p) =>
+                      buyerTransactions.number + 1 <
+                      buyerTransactions.totalPages
+                        ? p + 1
+                        : p
+                    )
+                  : setSellerPage((p) =>
+                      sellerTransactions.number + 1 <
+                      sellerTransactions.totalPages
+                        ? p + 1
+                        : p
+                    )
+              }
+              className={`px-4 py-2 rounded-lg ${
+                activeTab === "buyer"
+                  ? buyerTransactions.number + 1 >= buyerTransactions.totalPages
+                    ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                    : "bg-blue-600 text-white hover:bg-blue-700"
+                  : sellerTransactions.number + 1 >=
+                    sellerTransactions.totalPages
+                  ? "bg-gray-300 text-gray-600 cursor-not-allowed"
+                  : "bg-blue-600 text-white hover:bg-blue-700"
+              }`}
+            >
+              다음
+            </button>
+          </div>
         </div>
       </main>
 

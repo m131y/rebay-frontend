@@ -10,6 +10,10 @@ const TransactionDetail = () => {
 
   // 거래 정보 상태
   const [transaction, setTransaction] = useState(null);
+
+  const [showCreateReview, setShowCreateReview] = useState(false);
+
+  // 로딩, 에러, 처리 등 UI 상태
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState(null);
@@ -294,9 +298,18 @@ const TransactionDetail = () => {
             <button
               onClick={handleConfirmReceipt}
               disabled={confirming}
-              className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+              className="cursor-pointer flex-1 px-6 py-3 bg-rebay-green text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
             >
-              {confirming ? "처리 중..." : "✓ 상품 수령 확인"}
+              {confirming ? "처리 중..." : "상품 수령 확인"}
+            </button>
+          )}
+          {transaction.status === "COMPLETED" && !isSeller && (
+            <button
+              type="button"
+              onClick={() => setShowCreateReview(true)}
+              className="cursor-pointer flex-1 px-6 py-3 bg-rebay-green text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+            >
+              리뷰 작성
             </button>
           )}
         </div>
