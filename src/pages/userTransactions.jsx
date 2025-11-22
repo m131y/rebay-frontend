@@ -44,10 +44,12 @@ const UserTransactions = () => {
   const getStatusText = (status) => {
     const statusMap = {
       PAYMENT_PENDING: "결제 대기",
+      READY: "결제 대기",
       PAID: "결제 완료",
       SETTLEMENT_PENDING: "정산 대기",
       COMPLETED: "정산 완료",
       CANCELED: "거래 취소",
+      EXPIRED: "만료된 거래",
     };
     return statusMap[status] || status;
   };
