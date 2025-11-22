@@ -145,13 +145,13 @@ const PaymentSuccess = () => {
         <div className="flex gap-4">
           <button
             onClick={() => navigate("/")}
-            className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+            className="cursor-pointer flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
           >
             홈으로
           </button>
           <button
             onClick={() => navigate(`/transaction/${transaction?.id}`)}
-            className="flex-1 px-6 py-3 bg-rebay-blue text-white rounded-lg hover:opacity-90"
+            className="cursor-pointer flex-1 px-6 py-3 bg-rebay-blue text-white rounded-lg hover:opacity-90"
           >
             거래 상세보기
           </button>
