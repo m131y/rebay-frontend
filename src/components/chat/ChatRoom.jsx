@@ -29,7 +29,7 @@ const ChatRoom = ({ roomId }) => {
   };
 
   return (
-    <div className="flex flex-col h-full max-h-[80vh] bg-white rounded-lg shadow-lg border border-gray-200 overflow-hidden">
+    <div className="font-presentation flex flex-col h-full max-h-[80vh] bg-white rounded-lg shadow-lg border border-rebay-gray-400 overflow-hidden">
       {/* 헤더 */}
       <div className="bg-rebay-blue text-white p-4 flex items-center">
         <button onClick={() => navigate(-1)} className="mr-3 hover:opacity-80">
@@ -61,7 +61,7 @@ const ChatRoom = ({ roomId }) => {
                   className={`max-w-[70%] px-4 py-2 rounded-2xl text-sm ${
                     isMe
                       ? "bg-blue-500 text-white rounded-br-none"
-                      : "bg-white border border-gray-200 text-gray-800 rounded-bl-none"
+                      : "bg-white border border-rebay-gray-200 text-gray-800 rounded-bl-none"
                   }`}
                 >
                   {msg.content}
@@ -73,10 +73,13 @@ const ChatRoom = ({ roomId }) => {
       </div>
 
       {/* 입력창 */}
-      <form onSubmit={handleSend} className="p-3 bg-white border-t flex gap-2">
+      <form
+        onSubmit={handleSend}
+        className="p-3 bg-white border-t border-rebay-gray-400 flex gap-2"
+      >
         <input
           type="text"
-          className="flex-1 border rounded-full px-4 py-2 focus:outline-none focus:border-blue-500"
+          className="flex-1 border border-rebay-gray-400 rounded-full px-4 py-2 focus:outline-none focus:border-blue-500"
           placeholder="메시지 입력..."
           value={input}
           onChange={(e) => setInput(e.target.value)}
@@ -84,7 +87,7 @@ const ChatRoom = ({ roomId }) => {
         <button
           type="submit"
           disabled={!input.trim()}
-          className="bg-blue-600 text-white p-3 rounded-full hover:bg-blue-700 disabled:opacity-50"
+          className="bg-rebay-blue text-white p-3 rounded-full hover:opacity-80 disabled:opacity-50"
         >
           <FiSend size={18} />
         </button>

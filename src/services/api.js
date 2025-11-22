@@ -1,7 +1,9 @@
 import axios from "axios";
 import StorageService from "./storage";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+const API_URL = (
+  import.meta.env.VITE_API_URL || "http://localhost:8080"
+).trim();
 
 const api = axios.create({
   baseURL: API_URL,

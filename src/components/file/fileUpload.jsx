@@ -68,7 +68,7 @@ const FileUpload = ({ user, onClose }) => {
       let imageUrl = null;
 
       // 1. S3에 이미지 업로드
-      const response = await s3Service.uploadImage(selectedImage);
+      const response = await s3Service.uploadProfileImage(selectedImage);
       imageUrl = response.url;
 
       onClose(imageUrl);

@@ -59,7 +59,7 @@ const PaymentSuccess = () => {
 
   if (error) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="font-presentation container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto text-center">
           <div className="bg-red-50 border border-red-200 rounded-lg p-8">
             <div className="text-6xl mb-4">✕</div>
@@ -88,7 +88,7 @@ const PaymentSuccess = () => {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="font-presentation container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <div className="bg-green-50 border border-green-200 rounded-lg p-8 mb-6">
           <div className="text-center mb-6">
@@ -151,7 +151,7 @@ const PaymentSuccess = () => {
           </button>
           <button
             onClick={() => navigate(`/transaction/${transaction?.id}`)}
-            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="flex-1 px-6 py-3 bg-rebay-blue text-white rounded-lg hover:opacity-90"
           >
             거래 상세보기
           </button>

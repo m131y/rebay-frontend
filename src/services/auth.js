@@ -5,8 +5,6 @@ export const authService = {
     const response = await api.post(`/api/auth/register`, userData);
     const { access_token, refresh_token, user } = response.data;
 
-    console.log("authService:", response.data);
-
     localStorage.setItem("accessToken", access_token);
     localStorage.setItem("refreshToken", refresh_token);
     localStorage.setItem("user", JSON.stringify(user));
@@ -18,8 +16,6 @@ export const authService = {
     try {
       const response = await api.post(`/api/auth/login`, userData);
       const { access_token, refresh_token, user } = response.data;
-
-      console.log("authService:", response.data);
 
       if (access_token) {
         localStorage.setItem("accessToken", access_token);

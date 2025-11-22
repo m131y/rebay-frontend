@@ -44,7 +44,7 @@ const ChatList = () => {
   return (
     <MainLayout>
       <Header />
-      <div className="w-full max-w-[600px] mx-auto px-4 py-8 min-h-[calc(100vh-200px)]">
+      <div className="font-presentation w-full max-w-[600px] mx-auto px-4 py-8 min-h-[calc(100vh-200px)]">
         <h1 className="text-2xl font-bold mb-6 font-presentation">채팅 목록</h1>
 
         {loading ? (

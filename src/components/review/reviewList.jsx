@@ -12,7 +12,6 @@ const ReviewList = ({ user, variant = "default" }) => {
     getSellerReviews,
   } = useReviewStore();
 
-  const [showCreateReview, setShowCreateReview] = useState(false);
   const [reviewType, setReviewType] = useState("SellerReviews");
 
   const handleSelecSellerdReviews = () => {
@@ -103,12 +102,6 @@ const ReviewList = ({ user, variant = "default" }) => {
           </div>
         )}
       </div>
-
-      {showCreateReview && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <CreateReview onClose={() => setShowCreateReview(false)} />
-        </div>
-      )}
     </div>
   );
 };

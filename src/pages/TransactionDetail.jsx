@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getTransaction, confirmReceipt } from "../services/payment";
 import useAuthStore from "../store/authStore";
+import CreateReview from "../components/review/createReview";
 
 const TransactionDetail = () => {
   const { transactionId } = useParams();
@@ -9,8 +10,6 @@ const TransactionDetail = () => {
 
   // 거래 정보 상태
   const [transaction, setTransaction] = useState(null);
-
-  // 로딩, 에러, 처리 등 UI 상태
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
   const [error, setError] = useState(null);
@@ -106,7 +105,7 @@ const TransactionDetail = () => {
   // 에러 UI
   if (error || !transaction) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="font-presentation container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto text-center">
           <div className="bg-red-50 border border-red-200 rounded-lg p-8">
             <div className="text-6xl mb-4">!</div>
@@ -144,13 +143,13 @@ const TransactionDetail = () => {
     !isSeller && transaction.status === "PAID" && !transaction.isReceived;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="font-presentation container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         {/* 뒤로가기 + 제목 */}
         <div className="flex items-center mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="mr-4 text-gray-600 hover:text-gray-800"
+            className="mr-4 cursor-pointer  text-gray-600 hover:text-gray-800"
           >
             ← 뒤로
           </button>
@@ -282,38 +281,32 @@ const TransactionDetail = () => {
         )}
 
         {/* 버튼 영역 */}
-        {isSeller ? (
-          // 판매자: 홈 버튼만 표시
-          <div className="flex justify-center mt-6">
+        <div className="flex gap-4">
+          <button
+            onClick={() => navigate("/")}
+            className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+          >
+            홈으로
+          </button>
+          {canConfirmReceipt && (
             <button
-              onClick={() => navigate("/")}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              onClick={handleConfirmReceipt}
+              disabled={confirming}
+              className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
             >
-              홈으로
+              {confirming ? "처리 중..." : "✓ 상품 수령 확인"}
             </button>
-          </div>
-        ) : (
-          // 구매자: 홈 + 수령확인 버튼 표시
-          <div className="flex gap-4 mt-6">
-            <button
-              onClick={() => navigate("/")}
-              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-            >
-              홈으로
-            </button>
-
-            {canConfirmReceipt && (
-              <button
-                onClick={handleConfirmReceipt}
-                disabled={confirming}
-                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
-              >
-                {confirming ? "처리 중..." : "상품 수령 확인"}
-              </button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
+      {showCreateReview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <CreateReview
+            transactionId={transactionId}
+            onClose={() => setShowCreateReview(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };

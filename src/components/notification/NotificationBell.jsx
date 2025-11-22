@@ -48,7 +48,7 @@ const NotificationBell = () => {
   };
 
   return (
-    <div className="relative z-50">
+    <div className="font-presentation relative z-50">
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="relative p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -67,8 +67,8 @@ const NotificationBell = () => {
             className="fixed inset-0 z-40"
             onClick={() => setIsOpen(false)}
           />
-          <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden z-50">
-            <div className="p-4 border-b flex justify-between items-center bg-gray-50">
+          <div className="absolute right-0 mt-2 w-80 bg-white rounded-xl shadow-2xl border border-rebay-gray-100 overflow-hidden z-50">
+            <div className="p-4 border-b border-rebay-gray-300 flex justify-between items-center bg-gray-50">
               <h3 className="font-bold text-gray-700">알림</h3>
               {unreadCount > 0 && (
                 <button
