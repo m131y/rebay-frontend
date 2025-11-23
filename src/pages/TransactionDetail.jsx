@@ -75,9 +75,11 @@ const TransactionDetail = () => {
     const statusMap = {
       PAYMENT_PENDING: "결제 대기",
       PAID: "결제 완료 (에스크로 예치)",
+      READY: "결제 대기",
       SETTLEMENT_PENDING: "정산 대기",
       COMPLETED: "거래 완료",
       CANCELED: "거래 취소",
+      EXPIRED: "만료된 거래",
     };
     return statusMap[status] || status;
   };
@@ -285,45 +287,32 @@ const TransactionDetail = () => {
         )}
 
         {/* 버튼 영역 */}
-        {isSeller ? (
-          // 판매자: 홈 버튼만 표시
-          <div className="flex justify-center mt-6">
+        <div className="flex gap-4">
+          <button
+            onClick={() => navigate("/")}
+            className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+          >
+            홈으로
+          </button>
+          {canConfirmReceipt && (
             <button
-              onClick={() => navigate("/")}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              onClick={handleConfirmReceipt}
+              disabled={confirming}
+              className="cursor-pointer flex-1 px-6 py-3 bg-rebay-green text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
             >
-              홈으로
+              {confirming ? "처리 중..." : "상품 수령 확인"}
             </button>
-          </div>
-        ) : (
-          // 구매자: 홈 + 수령확인 버튼 표시
-          <div className="flex gap-4 mt-6">
+          )}
+          {transaction.status === "COMPLETED" && !isSeller && (
             <button
-              onClick={() => navigate("/")}
-              className="cursor-pointer flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+              type="button"
+              onClick={() => setShowCreateReview(true)}
+              className="cursor-pointer flex-1 px-6 py-3 bg-rebay-green text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
             >
-              홈으로
+              리뷰 작성
             </button>
-
-            {canConfirmReceipt ? (
-              <button
-                onClick={handleConfirmReceipt}
-                disabled={confirming}
-                className="cursor-pointer flex-1 px-6 py-3 bg-rebay-green text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
-              >
-                {confirming ? "처리 중..." : "상품 수령 확인"}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={() => setShowCreateReview(true)}
-                className="cursor-pointer flex-1 px-6 py-3 bg-rebay-green text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
-              >
-                리뷰 작성
-              </button>
-            )}
-          </div>
-        )}
+          )}
+        </div>
       </div>
       {showCreateReview && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
