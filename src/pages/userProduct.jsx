@@ -535,8 +535,13 @@ export default function UserProduct() {
                 onClick={async () => {
                   if (!window.confirm("이 상품을 삭제할까요?")) return;
                   try {
-                    await postService.deletePost(post.id);
-                    navigate("/products");
+                    if (isAuction) {
+                      await postService.deleteAuction(post.id);
+                      navigate("/products");
+                    } else {
+                      await postService.deletePost(post.id);
+                      navigate("/products");
+                    }
                   } catch (e) {
                     console.error(e);
                     alert("삭제 실패");
