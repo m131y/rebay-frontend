@@ -76,6 +76,12 @@ const postService = {
     return response.data;
   },
 
+  // 입찰하기 함수
+  placeBid: async (auctionId, amount) => {
+    const response = await api.post(`/api/auction/${auctionId}/bid`, { amount });
+    return response.data;
+  },
+
   getAllProducts: async (params) => {
     const response = await api.get("/api/products", { params: params });
     return response.data;

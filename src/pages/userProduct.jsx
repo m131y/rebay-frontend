@@ -18,6 +18,9 @@ import { Chart as ChartJS } from "chart.js";
 
 import { chatApi } from "../services/chat";
 
+import { EventSourcePolyfill } from "event-source-polyfill";
+import StorageService from "../services/storage";
+
 ChartJS.defaults.font.family = "Presentation";
 ChartJS.defaults.font.size = 11;
 ChartJS.defaults.font.weight = "400";
@@ -26,8 +29,8 @@ const priceFormat = (v) =>
   v == null
     ? ""
     : new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
-        Number(v)
-      );
+      Number(v)
+    );
 
 // ======================
 // A버전 공통 이미지 키 추출 함수
@@ -224,6 +227,9 @@ export default function UserProduct() {
     following: 0,
   });
 
+  const [isBidModalOpen, setIsBidModalOpen] = useState(false);
+  const [bidInput, setBidInput] = useState("");
+
   const formatAuctionTime = (isoString) => {
     if (!isoString) return "";
     const date = new Date(isoString);
@@ -234,6 +240,83 @@ export default function UserProduct() {
     const minute = date.getMinutes().toString().padStart(2, "0");
 
     return `${year}.${month}.${day}. ${hour}시 ${minute}분`;
+  };
+
+  // SSE 연결 및 실시간 가격 업데이트 로직
+  useEffect(() => {
+    // 경매가 아니거나, 로그인이 안 되어 있거나, post 정보가 없으면 스킵
+    if (!isAuction || !post?.id || !user) return;
+
+    const token = StorageService.getAccessToken();
+    const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
+    // SSE 연결 생성 (헤더에 토큰 포함)
+    const eventSource = new EventSourcePolyfill(
+      `${baseURL}/api/auction/${post.id}/stream`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        heartbeatTimeout: 86400000,
+      }
+    );
+
+    eventSource.onopen = () => {
+      console.log("경매 실시간 연결 성공");
+    };
+
+    // 서버에서 "BID_UPDATE" 이벤트를 보내면 처리
+    eventSource.addEventListener("BID_UPDATE", (e) => {
+      const data = JSON.parse(e.data);
+      console.log("실시간 입찰 정보 수신:", data);
+
+      // 화면의 가격 정보를 실시간으로 업데이트
+      setPost((prev) => ({
+        ...prev,
+        price: data.currentPrice, // 현재가 갱신
+        currentPrice: data.currentPrice
+      }));
+
+    });
+
+    return () => {
+      eventSource.close(); // 페이지 나가면 연결 종료
+      console.log("경매 연결 종료");
+    };
+  }, [isAuction, post?.id, user]);
+
+
+  // 입찰 버튼 클릭 핸들러
+  const handleBid = async () => {
+    if (!user) {
+      alert("로그인이 필요합니다.");
+      navigate("/login");
+      return;
+    }
+
+    const inputPrice = window.prompt(
+      `현재가: ${priceFormat(post.price)}원\n얼마를 입찰하시겠습니까?`,
+      post.price + 1000 // 기본값: 현재가 + 1000원
+    );
+
+    if (!inputPrice) return; // 취소
+
+    const bidAmount = Number(inputPrice);
+    if (isNaN(bidAmount)) {
+      alert("숫자만 입력해주세요.");
+      return;
+    }
+
+    if (bidAmount <= post.price) {
+      alert("현재가보다 높은 금액을 입력해야 합니다.");
+      return;
+    }
+
+    try {
+      await postService.placeBid(post.id, bidAmount);
+      alert("입찰에 성공했습니다!");
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "입찰에 실패했습니다.");
+    }
   };
 
   // ✅ 상품 상세 + 이미지 presign
@@ -504,6 +587,77 @@ export default function UserProduct() {
     }
   }
 
+  // 모달 컴포넌트
+  const BidModal = () => {
+    if (!isBidModalOpen) return null;
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      const amount = Number(bidInput);
+
+      if (isNaN(amount) || amount <= post.price) {
+        alert("현재가보다 높은 금액을 입력해주세요.");
+        return;
+      }
+
+      try {
+        // 기존 handleBid 로직 호출 (API 전송)
+        await postService.placeBid(post.id, amount);
+
+        // 성공 시 처리
+        alert("입찰 성공!");
+        setIsBidModalOpen(false);
+        setBidInput("");
+      } catch (err) {
+        alert(err.response?.data?.message || "입찰 실패");
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="bg-white w-[400px] rounded-2xl shadow-2xl p-6 font-presentation animate-fadeIn">
+          <h3 className="text-xl font-bold mb-4 text-gray-800">입찰하기</h3>
+
+          <div className="mb-6">
+            <p className="text-sm text-gray-500 mb-1">현재 최고가</p>
+            <p className="text-2xl font-bold text-rebay-blue">{priceFormat(post.price)}원</p>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              입찰하실 금액을 입력하세요
+            </label>
+            <input
+              type="number"
+              value={bidInput}
+              onChange={(e) => setBidInput(e.target.value)}
+              placeholder={post.price + 1000}
+              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-rebay-blue focus:ring-2 focus:ring-blue-100 outline-none transition-all text-lg font-bold mb-6"
+              autoFocus
+            />
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setIsBidModalOpen(false)}
+                className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold hover:bg-gray-50 transition"
+              >
+                취소
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-3 rounded-xl bg-rebay-blue text-white font-bold hover:bg-blue-700 shadow-lg transition"
+              >
+                입찰확인
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
+
+
   return (
     <MainLayout>
       <Header />
@@ -619,9 +773,8 @@ export default function UserProduct() {
                     <button
                       key={idx}
                       onClick={() => go(idx)}
-                      className={`w-2.5 h-2.5 rounded-full ${
-                        current === idx ? "bg-gray-800" : "bg-gray-300"
-                      }`}
+                      className={`w-2.5 h-2.5 rounded-full ${current === idx ? "bg-gray-800" : "bg-gray-300"
+                        }`}
                       aria-label={`이미지 ${idx + 1}`}
                     />
                   ))}
@@ -667,12 +820,12 @@ export default function UserProduct() {
                 <div className="pt-1 flex gap-3">
                   {isAuction ? (
                     <button
+                      onClick={() => setIsBidModalOpen(true)}
                       disabled={isBidDisabled}
                       className={`inline-flex cursor-pointer items-center justify-center rounded-lg ${statusBgColor} text-white px-7 py-3 text-[15px] shadow hover:shadow-md transition-all font-semibold 
-                        ${
-                          isBidDisabled
-                            ? "opacity-50 cursor-not-allowed bg-gray-400"
-                            : "hover:opacity-90"
+                        ${isBidDisabled
+                          ? "opacity-50 cursor-not-allowed bg-gray-400"
+                          : "hover:opacity-90"
                         }`}
                     >
                       {isBidDisabled ? (
@@ -778,6 +931,8 @@ export default function UserProduct() {
             <TradeChart tradeHistoryList={tradeHistoryList} />
           </section>
         )}
+
+        <BidModal />
       </div>
       <Footer />
     </MainLayout>
