@@ -11,10 +11,11 @@ const PriceFormat = (value) =>
         Number(value)
       );
 
-const Product = ({ post, onClick, variant = "default" }) => {
+const Product = ({ post, onClick, variant = "default", type }) => {
   const navigate = useNavigate();
   const [signedUrl, setSignedUrl] = useState("");
   const [loading, setLoading] = useState(false);
+  const isAuction = type === "AUCTION";
 
   // 🔹 판매 상태 (백엔드 enum: ON_SALE, SOLD)
   const isSold = post?.status === "SOLD";
@@ -24,7 +25,7 @@ const Product = ({ post, onClick, variant = "default" }) => {
 
     const loadImage = async () => {
       try {
-        const fileKey = post?.imageUrl || "";
+        const fileKey = post?.thumbnailImageUrl || "";
         if (!fileKey) {
           if (!cancelled) {
             setSignedUrl("");
@@ -50,11 +51,17 @@ const Product = ({ post, onClick, variant = "default" }) => {
     return () => {
       cancelled = true;
     };
-  }, [post?.imageUrl]);
+  }, [post?.thumbnailImageUrl]);
 
   const handleClick = () => {
     if (typeof onClick === "function") return onClick(post);
-    if (post?.id != null) navigate(`/products/${post.id}`);
+    if (post?.id != null) {
+      if (type === "POST") {
+        navigate(`/products/${post.id}`);
+      } else {
+        navigate(`/auctions/${post.id}`);
+      }
+    }
   };
 
   const variants = {
@@ -78,6 +85,14 @@ const Product = ({ post, onClick, variant = "default" }) => {
 
   const currentStyle = variants[variant] || variants.default;
 
+  const cardType = `group w-full h-full border rounded-[12px] 
+                   hover:shadow-md hover:-translate-y-[2px] transition-transform text-left
+                   focus:outline-none focus:ring-2 focus:ring-blue-300  ${
+                     isAuction
+                       ? "bg-red-50 border-red-300"
+                       : "bg-blue-50 border-blue-300"
+                   }`;
+
   return (
     <div className={currentStyle.wrapper}>
       <div
@@ -87,9 +102,7 @@ const Product = ({ post, onClick, variant = "default" }) => {
         onKeyDown={(e) => {
           if (e.key === "Enter" || e.key === " ") handleClick();
         }}
-        className="group w-full h-full border border-gray-200 rounded-[12px] bg-white 
-                   hover:shadow-md hover:-translate-y-[2px] transition-transform text-left
-                   focus:outline-none focus:ring-2 focus:ring-blue-300"
+        className={cardType}
       >
         {/* 🔹 이미지 영역 */}
         <div
@@ -128,12 +141,18 @@ const Product = ({ post, onClick, variant = "default" }) => {
           <div
             className={`${currentStyle.titleText} leading-snug line-clamp-1`}
           >
-            {post?.title || "제목 없음"}
+            <div className="flex justify-between whitespace-break-spaces ">
+              <div>{post?.title || "제목 없음"}</div>
+            </div>
           </div>
 
-          {post?.price != null && (
+          {post?.price != null ? (
             <div className={`${currentStyle.priceText} mt-1`}>
               {PriceFormat(post.price)}원
+            </div>
+          ) : (
+            <div className={`${currentStyle.priceText} mt-1`}>
+              입찰가: {PriceFormat(post.startPrice)}원
             </div>
           )}
 

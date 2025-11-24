@@ -4,7 +4,9 @@ import Footer from "../components/layout/Footer";
 import Header from "../components/layout/Header";
 import MainLayout from "../components/layout/MainLayout";
 import Product from "../components/products/product";
-import postService from "../services/post";
+import postService from "../services/post"; // 가정: postService가 쿼리 매개변수를 받는 getAllProducts를 제공한다고 가정
+
+const DEFAULT_LARGE_CODE = null;
 
 const CATEGORY_HIERARCHY = {
   200: {
@@ -115,8 +117,6 @@ const CATEGORY_HIERARCHY = {
   900: { name: "기타 중고 물품", children: {} },
 };
 
-const DEFAULT_LARGE_CODE = Object.keys(CATEGORY_HIERARCHY)[0] || "";
-
 const SORTS = {
   LATEST: "LATEST",
   PRICE_ASC: "PRICE_ASC",
@@ -124,372 +124,478 @@ const SORTS = {
   TITLE_ASC: "TITLE_ASC",
 };
 
+const PRODUCT_TYPES = {
+  ALL: "ALL",
+  NORMAL: "POST",
+  AUCTION: "AUCTION",
+};
+
 const PAGE_SIZE = 10;
 
 const Products = () => {
-  const [allPosts, setAllPosts] = useState([]);
+  const [posts, setPosts] = useState([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  const [selectedType, setSelectedType] = useState(PRODUCT_TYPES.ALL);
   const [selectedLgCode, setSelectedLgCode] = useState(DEFAULT_LARGE_CODE);
   const [selectedMdCode, setSelectedMdCode] = useState("");
   const [selectedSmCode, setSelectedSmCode] = useState("");
-
   const [sort, setSort] = useState(SORTS.LATEST);
   const [page, setPage] = useState(1);
-
-  const [finalCode, setFinalCode] = useState("ALL");
-
-  // ✅ 기본값 true: 처음엔 판매완료 제외
   const [excludeSold, setExcludeSold] = useState(true);
 
+  const [lastFilterState, setLastFilterState] = useState({
+    finalCode: DEFAULT_LARGE_CODE,
+    sort: SORTS.LATEST,
+    excludeSold: true,
+    selectedType: PRODUCT_TYPES.ALL,
+  });
+
+  const finalCode = useMemo(
+    () => selectedSmCode || selectedMdCode || selectedLgCode,
+    [selectedSmCode, selectedMdCode, selectedLgCode]
+  );
+
+  // 현재 선택된 대분류에 따른 중분류 옵션 계산
   const mdOptions = useMemo(() => {
     const lg = CATEGORY_HIERARCHY[selectedLgCode];
     return lg?.children || {};
   }, [selectedLgCode]);
 
+  // 현재 선택된 중분류에 따른 소분류 옵션 계산
   const smOptions = useMemo(() => {
     const md = mdOptions[selectedMdCode];
     return md?.children || {};
   }, [selectedMdCode, mdOptions]);
 
+  // 대분류 변경 핸들러
   const handleLgChange = (e) => {
-    const newLgCode = e.target.value;
+    const newLgCode =
+      e.target.value === "null" ? DEFAULT_LARGE_CODE : e.target.value;
     setSelectedLgCode(newLgCode);
     setSelectedMdCode("");
     setSelectedSmCode("");
-    setError(null);
-    setFinalCode(newLgCode);
   };
-
+  // 중분류 변경 핸들러
   const handleMdChange = (e) => {
     const newMdCode = e.target.value;
     setSelectedMdCode(newMdCode);
     setSelectedSmCode("");
-    setError(null);
-    setFinalCode(newMdCode || selectedLgCode);
   };
 
+  // 소분류 변경 핸들러
   const handleSmChange = (e) => {
     const newSmCode = e.target.value;
     setSelectedSmCode(newSmCode);
-    setError(null);
-    setFinalCode(newSmCode || selectedMdCode || selectedLgCode);
   };
 
   useEffect(() => {
-    (async () => {
+    // 현재 필터 상태
+    const currentFilterState = { finalCode, sort, excludeSold, selectedType };
+
+    // 필터 상태가 변경되었는지 확인
+    const filterChanged =
+      currentFilterState.finalCode !== lastFilterState.finalCode ||
+      currentFilterState.sort !== lastFilterState.sort ||
+      currentFilterState.excludeSold !== lastFilterState.excludeSold ||
+      currentFilterState.selectedType !== lastFilterState.selectedType;
+
+    let targetPage = page;
+
+    if (filterChanged) {
+      setPage(1);
+      targetPage = 1;
+      setLastFilterState(currentFilterState);
+    }
+
+    const fetchIntegratedProducts = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        const merged = [];
-        let p = 0;
+        const params = {
+          page: targetPage - 1,
+          size: PAGE_SIZE,
+          sort: sort,
+          categoryCode:
+            finalCode !== DEFAULT_LARGE_CODE ? finalCode : undefined,
+          excludeSold: excludeSold,
+          productType:
+            selectedType === PRODUCT_TYPES.ALL ? undefined : selectedType,
+        };
 
-        while (true) {
-          const content = await postService.getAllPosts(p, PAGE_SIZE);
-          if (!content || content.length === 0) break;
-          merged.push(...content);
-          p += 1;
+        const response = await postService.getAllProducts(params);
+
+        const mappedProducts = response.content.map((item) => ({
+          id: item.productId,
+          title: item.title,
+          content: item.content,
+          categoryCode: item.categoryCode,
+          price: item.price,
+          imageUrl: item.thumbnailImageUrl,
+          status: item.status,
+          type: item.productType,
+          createdAt: item.createdAt,
+          ...item,
+        }));
+
+        if (response && response.content) {
+          setPosts(mappedProducts);
+          setTotalPages(response.totalPages || 1);
+          setTotalElements(response.totalElements || 0);
+        } else {
+          setPosts([]);
+          setTotalPages(1);
+          setTotalElements(0);
         }
-
-        setAllPosts(merged);
       } catch (e) {
-        setError(e?.response?.data?.message || e.message || "불러오기 실패");
+        console.error("Failed to fetch integrated products:", e);
+        setError(
+          "상품 목록을 불러오는 데 실패했습니다. 잠시 후 다시 시도해 주세요."
+        );
+        setPosts([]);
+        setTotalPages(1);
+        setTotalElements(0);
       } finally {
         setLoading(false);
       }
-    })();
-  }, []);
+    };
 
-  useEffect(() => {
-    setPage(1);
-  }, [finalCode, sort, excludeSold]);
-
-  const processed = useMemo(() => {
-    let rows = allPosts;
-
-    // ✅ excludeSold 가 true면 SOLD 제거
-    if (excludeSold) {
-      rows = rows.filter((r) => r?.status !== "SOLD");
-    }
-
-    // 카테고리 필터
-    if (finalCode && finalCode !== "ALL") {
-      rows = rows.filter((r) => {
-        const postCategoryCode = r?.categoryCode?.toString();
-        if (!postCategoryCode) return false;
-        return postCategoryCode.startsWith(finalCode);
-      });
-    }
-
-    const safeNum = (v) => (v == null ? Number.NEGATIVE_INFINITY : Number(v));
-    const safeStr = (s) => (s || "").toString();
-
-    switch (sort) {
-      case SORTS.PRICE_ASC:
-        rows = [...rows].sort((a, b) => safeNum(a?.price) - safeNum(b?.price));
-        break;
-      case SORTS.PRICE_DESC:
-        rows = [...rows].sort((a, b) => safeNum(b?.price) - safeNum(a?.price));
-        break;
-      case SORTS.TITLE_ASC:
-        rows = [...rows].sort((a, b) =>
-          safeStr(a?.title).localeCompare(safeStr(b?.title))
-        );
-        break;
-      case SORTS.LATEST:
-      default:
-        rows = [...rows].sort(
-          (a, b) =>
-            new Date(b?.createdAt || 0).getTime() -
-            new Date(a?.createdAt || 0).getTime()
-        );
-        break;
-    }
-
-    return rows;
-  }, [allPosts, finalCode, sort, excludeSold]);
-
-  const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
-  const paged = useMemo(() => {
-    const start = (page - 1) * PAGE_SIZE;
-    return processed.slice(start, start + PAGE_SIZE);
-  }, [processed, page]);
-
+    fetchIntegratedProducts();
+    console.log(finalCode);
+  }, [page, finalCode, sort, excludeSold, selectedType]);
+  // 페이지 이동 함수
   const goPrev = () => setPage((p) => Math.max(1, p - 1));
   const goNext = () => setPage((p) => Math.min(totalPages, p + 1));
 
   return (
     <MainLayout>
       <Header />
-      <main className="my-[70px] font-presentation">
-        <section className="mx-auto w-full max-w-[1080px] px-3">
-          <div className="flex items-start justify-between mb-4">
-            {/* 제목 + 체크박스 묶음 */}
-            <div className="flex flex-col gap-1">
-              <h2 className="font-presentation py-6 text-[22px] font-bold">
-                상품보기
+      <main className="my-[70px] font-presentation flex-grow">
+        <section className="mx-auto w-full max-w-[1080px] px-4 sm:px-3">
+          <div className="flex flex-col md:flex-row items-start justify-between mb-8 w-full">
+            <div className="flex flex-col gap-1 w-full md:w-auto">
+              <h2 className="py-4 text-3xl font-bold text-gray-800">
+                상품 둘러보기
               </h2>
-              {/* ✅ 기본은 판매완료 제외, 체크 시 포함 */}
-              <label className="flex items-center gap-1 text-xs text-gray-500 ml-1">
+
+              <div className="flex flex-wrap gap-2 mb-4">
+                {/* 전체 버튼 */}
+                <button
+                  onClick={() => setSelectedType(PRODUCT_TYPES.ALL)}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
+                    selectedType === PRODUCT_TYPES.ALL
+                      ? "bg-blue-600 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  전체
+                </button>
+                {/* 일반 상품 버튼 */}
+                <button
+                  onClick={() => setSelectedType(PRODUCT_TYPES.NORMAL)}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
+                    selectedType === PRODUCT_TYPES.NORMAL
+                      ? "bg-blue-500 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  일반 상품
+                </button>
+                {/* 경매 상품 버튼 */}
+                <button
+                  onClick={() => setSelectedType(PRODUCT_TYPES.AUCTION)}
+                  className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
+                    selectedType === PRODUCT_TYPES.AUCTION
+                      ? "bg-red-500 text-white"
+                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                  }`}
+                >
+                  경매 상품
+                </button>
+              </div>
+
+              {/* 판매 완료 상품 포함/제외 체크박스 */}
+              <label className="flex items-center gap-2 text-sm text-gray-600 ml-1">
                 <input
                   type="checkbox"
-                  className="w-3 h-3"
+                  className="w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500"
                   checked={!excludeSold}
                   onChange={(e) => setExcludeSold(!e.target.checked)}
                 />
-                <span>판매완료 상품 포함</span>
+                <span>판매 완료 상품 포함</span>
               </label>
             </div>
+            {/* 카테고리 */}
+            <div className="flex flex-col gap-3 w-full md:w-auto mt-4 md:mt-0">
+              <div className="flex flex-wrap gap-3 items-center justify-start md:justify-end">
+                {/* 대분류 */}
+                <div className="relative flex-1 min-w-[120px]">
+                  <select
+                    name="largeCategory"
+                    value={selectedLgCode === null ? "null" : selectedLgCode}
+                    onChange={handleLgChange}
+                    required
+                    className="w-full rounded-lg border border-gray-300 px-4 appearance-none py-2 text-base focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition"
+                  >
+                    <option value={"null"}>전체 카테고리</option>
+                    {Object.entries(CATEGORY_HIERARCHY).map(([code, data]) => (
+                      <option key={code} value={code}>
+                        {data.name}
+                      </option>
+                    ))}
+                  </select>
+                  <svg
+                    className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
 
-            <div className="flex flex-col justify-end items-center gap-2">
-              <div className="flex items-center justify-end w-[960px] mx-auto p-3 font-presentation">
-                <section className="flex items-center justify-center">
-                  <div className="flex flex-row items-center justify-center gap-3">
-                    {/* 대분류 */}
-                    <div className="relative flex-1">
-                      <select
-                        name="largeCategory"
-                        value={selectedLgCode}
-                        onChange={handleLgChange}
-                        required
-                        className="w-full rounded-xl border border-gray-300 px-4 appearance-none py-2.5 pr-10 bg-white text-base focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition"
-                      >
-                        {Object.entries(CATEGORY_HIERARCHY).map(
-                          ([code, data]) => (
-                            <option key={code} value={code}>
-                              {data.name}
-                            </option>
-                          )
-                        )}
-                      </select>
-                      <svg
-                        className="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </div>
+                {/* 중분류 */}
+                <div className="relative flex-1 min-w-[120px]">
+                  <select
+                    name="mediumCategory"
+                    value={selectedMdCode}
+                    onChange={handleMdChange}
+                    disabled={
+                      Object.keys(mdOptions).length === 0 ||
+                      selectedLgCode === DEFAULT_LARGE_CODE
+                    }
+                    className={`w-full rounded-lg border px-4 appearance-none py-2 text-base transition ${
+                      Object.keys(mdOptions).length === 0 ||
+                      selectedLgCode === DEFAULT_LARGE_CODE
+                        ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                        : "border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    }`}
+                  >
+                    <option value="">
+                      {selectedLgCode === DEFAULT_LARGE_CODE
+                        ? "대분류를 먼저 선택"
+                        : Object.keys(mdOptions).length === 0
+                        ? "하위 카테고리 없음"
+                        : "중분류 선택"}
+                    </option>
+                    {Object.entries(mdOptions).map(([code, data]) => (
+                      <option key={code} value={code}>
+                        {data.name}
+                      </option>
+                    ))}
+                  </select>
+                  <svg
+                    className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
 
-                    {/* 중분류 */}
-                    <div className="relative flex-1">
-                      <select
-                        name="mediumCategory"
-                        value={selectedMdCode}
-                        onChange={handleMdChange}
-                        disabled={Object.keys(mdOptions).length === 0}
-                        className={`w-full rounded-xl border px-4 appearance-none py-2.5 pr-10 bg-white text-base transition ${
-                          Object.keys(mdOptions).length === 0
-                            ? "border-gray-200 text-gray-400"
-                            : "border-gray-300 focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-                        }`}
-                      >
-                        <option value="">
-                          {Object.keys(mdOptions).length === 0
-                            ? "하위 카테고리 없음"
-                            : "중분류 선택"}
-                        </option>
-                        {Object.entries(mdOptions).map(([code, data]) => (
-                          <option key={code} value={code}>
-                            {data.name}
-                          </option>
-                        ))}
-                      </select>
-                      <svg
-                        className="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </div>
-
-                    {/* 소분류 */}
-                    <div className="relative flex-1">
-                      <select
-                        name="smallCategory"
-                        value={selectedSmCode}
-                        onChange={handleSmChange}
-                        disabled={Object.keys(smOptions).length === 0}
-                        className={`w-full rounded-xl border px-4 appearance-none py-2.5 pr-10 bg-white text-base transition ${
-                          Object.keys(smOptions).length === 0
-                            ? "border-gray-200 text-gray-400"
-                            : "border-gray-300 focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-                        }`}
-                      >
-                        <option value="">
-                          {Object.keys(smOptions).length === 0
-                            ? "하위 카테고리 없음"
-                            : "소분류 선택"}
-                        </option>
-                        {Object.entries(smOptions).map(([code, data]) => (
-                          <option key={code} value={code}>
-                            {data.name}
-                          </option>
-                        ))}
-                      </select>
-                      <svg
-                        className="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                </section>
-                {error && <p className="text-sm text-red-600">{error}</p>}
+                {/* 소분류 */}
+                <div className="relative flex-1 min-w-[120px]">
+                  <select
+                    name="smallCategory"
+                    value={selectedSmCode}
+                    onChange={handleSmChange}
+                    disabled={
+                      Object.keys(smOptions).length === 0 ||
+                      selectedMdCode === "" ||
+                      selectedLgCode === DEFAULT_LARGE_CODE
+                    }
+                    className={`w-full rounded-lg border px-4 appearance-none py-2 text-base transition ${
+                      Object.keys(smOptions).length === 0 ||
+                      selectedMdCode === "" ||
+                      selectedLgCode === DEFAULT_LARGE_CODE
+                        ? "border-gray-200 text-gray-400 cursor-not-allowed"
+                        : "border-gray-300 focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                    }`}
+                  >
+                    <option value="">
+                      {selectedMdCode === "" ||
+                      selectedLgCode === DEFAULT_LARGE_CODE
+                        ? "중분류를 먼저 선택"
+                        : Object.keys(smOptions).length === 0
+                        ? "하위 카테고리 없음"
+                        : "소분류 선택"}
+                    </option>
+                    {Object.entries(smOptions).map(([code, data]) => (
+                      <option key={code} value={code}>
+                        {data.name}
+                      </option>
+                    ))}
+                  </select>
+                  <svg
+                    className="w-4 h-4 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 9l-7 7-7-7"
+                    />
+                  </svg>
+                </div>
               </div>
 
               {/* 정렬 버튼 */}
-              <div className="w-full flex justify-end px-3">
-                <div>
-                  <button
-                    onClick={() => setSort(SORTS.LATEST)}
-                    className={`px-3 py-1.5 rounded-lg border border-rebay-gray-400 ${
-                      sort === SORTS.LATEST ? "bg-rebay-blue text-white" : ""
-                    }`}
-                  >
-                    최신순
-                  </button>
-                  <button
-                    onClick={() => setSort(SORTS.PRICE_ASC)}
-                    className={`px-3 py-1.5 rounded-lg border border-rebay-gray-400 ${
-                      sort === SORTS.PRICE_ASC ? "bg-rebay-blue text-white" : ""
-                    }`}
-                  >
-                    높은 가격순
-                  </button>
-                  <button
-                    onClick={() => setSort(SORTS.PRICE_DESC)}
-                    className={`px-3 py-1.5 rounded-lg border border-rebay-gray-400 ${
-                      sort === SORTS.PRICE_DESC
-                        ? "bg-rebay-blue text-white"
-                        : ""
-                    }`}
-                  >
-                    낮은 가격순
-                  </button>
-                  <button
-                    onClick={() => setSort(SORTS.TITLE_ASC)}
-                    className={`px-3 py-1.5 rounded-lg border border-rebay-gray-400 ${
-                      sort === SORTS.TITLE_ASC ? "bg-rebay-blue text-white" : ""
-                    }`}
-                  >
-                    이름순
-                  </button>
-                </div>
+              <div className="w-full flex justify-start md:justify-end flex-wrap gap-2 text-sm">
+                <span className="font-medium text-gray-700 hidden md:inline-block py-1.5">
+                  정렬:
+                </span>
+
+                <button
+                  onClick={() => setSort(SORTS.LATEST)}
+                  className={`px-3 py-1.5 rounded-lg border transition-colors ${
+                    sort === SORTS.LATEST
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  최신순
+                </button>
+                <button
+                  onClick={() => setSort(SORTS.PRICE_DESC)}
+                  className={`px-3 py-1.5 rounded-lg border transition-colors ${
+                    sort === SORTS.PRICE_DESC
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  높은 가격순
+                </button>
+                <button
+                  onClick={() => setSort(SORTS.PRICE_ASC)}
+                  className={`px-3 py-1.5 rounded-lg border transition-colors ${
+                    sort === SORTS.PRICE_ASC
+                      ? "bg-blue-600 text-white border-blue-600"
+                      : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                  }`}
+                >
+                  낮은 가격순
+                </button>
               </div>
             </div>
           </div>
 
-          {loading && <div className="text-gray-500 mb-3">불러오는 중…</div>}
-          {error && <div className="text-red-600 mb-3">{error}</div>}
+          <div className="text-gray-500 mb-4 text-sm font-medium">
+            총 {totalElements}개의 상품 중 {posts.length}개 표시 중 (페이지:{" "}
+            {page} / {totalPages})
+          </div>
 
-          {!loading && processed.length === 0 ? (
-            <div className="text-gray-500 py-10">표시할 상품이 없어요.</div>
+          {loading && (
+            <div className="text-gray-500 py-10 flex justify-center items-center">
+              <svg
+                className="animate-spin h-5 w-5 text-blue-500 mr-3"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              데이터를 불러오는 중입니다...
+            </div>
+          )}
+
+          {error && (
+            <div className="text-red-600 p-4 bg-red-50 border border-red-300 rounded-lg mb-4">
+              {error}
+            </div>
+          )}
+
+          {!loading && posts.length === 0 && !error ? (
+            <div className="text-gray-500 py-20 text-center border-2 border-dashed border-gray-200 rounded-xl bg-gray-50">
+              <p className="text-xl font-semibold">
+                선택하신 조건에 맞는 상품이 없어요.
+              </p>
+              <p className="mt-2 text-sm">필터링 조건을 변경해 보세요!</p>
+            </div>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {paged.map((post) => (
-                <Product key={post.id} post={post} />
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+              {/* 서버에서 받은 posts를 바로 사용 */}
+              {posts.map((post, index) => (
+                <Product
+                  key={index}
+                  id={post.id}
+                  post={post}
+                  type={post.type}
+                />
               ))}
             </div>
           )}
 
+          {/* 페이지네이션 UI */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-6">
+            <div className="flex items-center justify-center gap-2 mt-8">
               <button
                 onClick={goPrev}
                 disabled={page <= 1}
-                className="px-3 py-1.5 rounded-lg border border-rebay-gray-400 disabled:opacity-40"
+                className="px-4 py-2 rounded-xl bg-gray-100 border border-gray-300 font-medium text-gray-700 disabled:opacity-40 hover:bg-gray-200 transition duration-150 shadow-sm"
               >
-                이전
+                &lt; 이전
               </button>
 
+              {/* 페이지 번호 버튼 */}
               {Array.from({ length: totalPages }).map((_, i) => {
                 const n = i + 1;
-                return (
-                  <button
-                    key={n}
-                    onClick={() => setPage(n)}
-                    className={`px-3 py-1.5 rounded-lg border border-rebay-gray-400 ${
-                      n === page ? "bg-blue-600 text-white" : ""
-                    }`}
-                  >
-                    {n}
-                  </button>
-                );
+                // 현재 페이지 주변 5개만 표시 (n-2 ~ n+2)
+                if (n >= page - 2 && n <= page + 2 && n <= totalPages) {
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => setPage(n)}
+                      className={`w-10 h-10 rounded-full font-bold transition duration-150 ${
+                        n === page
+                          ? "bg-blue-600 text-white shadow-lg shadow-blue-300/50"
+                          : "text-gray-700 hover:bg-blue-100"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  );
+                }
+                return null;
               })}
 
               <button
                 onClick={goNext}
                 disabled={page >= totalPages}
-                className="px-3 py-1.5 rounded-lg border border-rebay-gray-400 disabled:opacity-40"
+                className="px-4 py-2 rounded-xl bg-gray-100 border border-gray-300 font-medium text-gray-700 disabled:opacity-40 hover:bg-gray-200 transition duration-150 shadow-sm"
               >
-                다음
+                다음 &gt;
               </button>
             </div>
           )}
