@@ -17,6 +17,8 @@ import TradeChart from "../components/ui/TradeChart";
 import { Chart as ChartJS } from "chart.js";
 
 import { chatApi } from "../services/chat";
+import CountdownTimer from "../components/ui/countdownTimer";
+import likeService from "../services/like";
 
 import { EventSourcePolyfill } from "event-source-polyfill";
 import StorageService from "../services/storage";
@@ -199,8 +201,9 @@ const timeAgo = (isoStr) => {
 export default function UserProduct() {
   const { productId } = useParams();
   const isAuction = window.location.pathname.startsWith("/auctions/");
-
   const navigate = useNavigate();
+
+  const [isSold, setIsSold] = useState();
 
   const { user } = useAuthStore();
   const { getStatisticsByUserProfile, getTradeHistory } = useStatisticsStore();
@@ -209,7 +212,6 @@ export default function UserProduct() {
   const [isfollowing, setIsFollowing] = useState(null);
   const [post, setPost] = useState(null);
 
-  // ⭐ A버전 이미지 캐러셀 상태
   const [images, setImages] = useState([]); // presign된 이미지 URL 배열
   const [current, setCurrent] = useState(0); // 대표 인덱스
 
@@ -333,6 +335,7 @@ export default function UserProduct() {
         }
 
         setPost(response);
+        setIsSold(response?.status === "SOLD");
 
         // ⭐ 여러 장 이미지 키 추출 → presign URL 변환
         const keys = extractImageKeys(response);
@@ -361,10 +364,9 @@ export default function UserProduct() {
           setImages([]);
         }
 
-        const rawLiked = localStorage.getItem(`liked:${productId}`);
-        const rawCount = localStorage.getItem(`likeCount:${productId}`);
-        setLiked(rawLiked ? JSON.parse(rawLiked) : false);
-        setLikeCount(rawCount ? Number(rawCount) : 0);
+        console.log(response);
+        setLiked(response.liked);
+        setLikeCount(response.likeCount);
       } catch (err) {
         console.error("❌ 상품 조회 실패:", err);
         setPost(null);
@@ -406,11 +408,17 @@ export default function UserProduct() {
   const onToggleLike = async () => {
     if (!post?.id) return;
     try {
-      const { isLiked, likeCount } = await postService.toggleLike(post.id);
-      setLiked(isLiked);
-      setLikeCount(likeCount);
-      localStorage.setItem(`liked:${productId}`, JSON.stringify(isLiked));
-      localStorage.setItem(`likeCount:${productId}`, String(likeCount));
+      if (isAuction) {
+        const { isLiked, likeCount } = await likeService.toggleAuctionLike(
+          post.id
+        );
+        setLiked(isLiked);
+        setLikeCount(likeCount);
+      } else {
+        const { isLiked, likeCount } = await likeService.toggleLike(post.id);
+        setLiked(isLiked);
+        setLikeCount(likeCount);
+      }
     } catch (e) {
       console.error("좋아요 실패:", e);
     }
@@ -542,7 +550,6 @@ export default function UserProduct() {
     fetchTradeHistory();
   }, [post?.categoryCode, getTradeHistory]);
 
-  // ⭐ 캐러셀 이동 함수
   const prev = () =>
     setCurrent((i) =>
       images.length ? (i - 1 + images.length) % images.length : 0
@@ -676,7 +683,16 @@ export default function UserProduct() {
               <button
                 onClick={() => {
                   if (isAuction) {
-                    navigate(`/auctions/${post.id}/edit`);
+                    if (
+                      auctionStatus === "ENDED" ||
+                      auctionStatus === "ACTIVE"
+                    ) {
+                      alert(
+                        "경매가 진행중 이거나 종료된 상품은 수정할 수 없습니다."
+                      );
+                    } else {
+                      navigate(`/auctions/${post.id}/edit`);
+                    }
                   } else {
                     navigate(`/products/${post.id}/edit`);
                   }
@@ -711,7 +727,6 @@ export default function UserProduct() {
 
         {/* 상단 영역 */}
         <section className="grid grid-cols-12 gap-8">
-          {/* ⭐ A버전 이미지 캐러셀 */}
           <div className="col-span-12 md:col-span-6">
             <div className="relative rounded-2xl border border-rebay-gray-400 shadow p-2 bg-gray-50">
               {/* 좋아요 버튼 */}
@@ -764,6 +779,16 @@ export default function UserProduct() {
                     </button>
                   </>
                 )}
+                {isSold && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    {/* 배경 살짝 어둡게 */}
+                    <div className="absolute inset-0 bg-black/20" />
+                    {/* 동그란 배지 */}
+                    <div className="relative flex items-center justify-center w-[86px] h-[86px] rounded-full bg-black/60 text-white text-xs font-semibold">
+                      판매완료
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* 인디케이터 점 */}
@@ -799,14 +824,22 @@ export default function UserProduct() {
                   {post?.price != null ? `${priceFormat(post.price)}원` : ""}
                 </div>
                 {isAuction && (
-                  <div className="flex items-center space-x-2 text-lg">
-                    <div className="rounded-full  px-2 bg-black text-white font-semibold">
-                      {formatAuctionTime(post?.startTime)}
-                    </div>
-                    <div>~</div>
-                    <div className="rounded-full px-2 bg-black text-white font-semibold">
-                      {formatAuctionTime(post?.endTime)}
-                    </div>
+                  <div>
+                    {auctionStatus === "ACTIVE" ? (
+                      <div className="pt-2">
+                        <CountdownTimer endTime={post.endTime} />
+                      </div>
+                    ) : (
+                      <div className="flex items-center space-x-2 text-lg">
+                        <div className="rounded-xl  px-2 bg-black text-white font-semibold">
+                          {formatAuctionTime(post?.startTime)}
+                        </div>
+                        <div>~</div>
+                        <div className="rounded-xl px-2 bg-black text-white font-semibold">
+                          {formatAuctionTime(post?.endTime)}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

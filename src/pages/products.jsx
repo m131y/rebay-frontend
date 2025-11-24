@@ -289,7 +289,7 @@ const Products = () => {
                   onClick={() => setSelectedType(PRODUCT_TYPES.ALL)}
                   className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
                     selectedType === PRODUCT_TYPES.ALL
-                      ? "bg-blue-600 text-white"
+                      ? "bg-rebay-blue text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -300,7 +300,7 @@ const Products = () => {
                   onClick={() => setSelectedType(PRODUCT_TYPES.NORMAL)}
                   className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
                     selectedType === PRODUCT_TYPES.NORMAL
-                      ? "bg-blue-500 text-white"
+                      ? "bg-rebay-blue text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -311,7 +311,7 @@ const Products = () => {
                   onClick={() => setSelectedType(PRODUCT_TYPES.AUCTION)}
                   className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
                     selectedType === PRODUCT_TYPES.AUCTION
-                      ? "bg-red-500 text-white"
+                      ? "bg-red-700 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -471,7 +471,7 @@ const Products = () => {
                   onClick={() => setSort(SORTS.LATEST)}
                   className={`px-3 py-1.5 rounded-lg border transition-colors ${
                     sort === SORTS.LATEST
-                      ? "bg-blue-600 text-white border-blue-600"
+                      ? "bg-rebay-blue text-white border-blue-600"
                       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
                 >
@@ -481,7 +481,7 @@ const Products = () => {
                   onClick={() => setSort(SORTS.PRICE_DESC)}
                   className={`px-3 py-1.5 rounded-lg border transition-colors ${
                     sort === SORTS.PRICE_DESC
-                      ? "bg-blue-600 text-white border-blue-600"
+                      ? "bg-rebay-blue text-white border-blue-600"
                       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
                 >
@@ -491,7 +491,7 @@ const Products = () => {
                   onClick={() => setSort(SORTS.PRICE_ASC)}
                   className={`px-3 py-1.5 rounded-lg border transition-colors ${
                     sort === SORTS.PRICE_ASC
-                      ? "bg-blue-600 text-white border-blue-600"
+                      ? "bg-rebay-blue text-white border-blue-600"
                       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
                 >
@@ -579,7 +579,7 @@ const Products = () => {
                       onClick={() => setPage(n)}
                       className={`w-10 h-10 rounded-full font-bold transition duration-150 ${
                         n === page
-                          ? "bg-blue-600 text-white shadow-lg shadow-blue-300/50"
+                          ? "bg-rebay-blue text-white shadow-lg shadow-blue-300/50"
                           : "text-gray-700 hover:bg-blue-100"
                       }`}
                     >
