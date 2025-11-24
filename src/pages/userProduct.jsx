@@ -195,6 +195,8 @@ const timeAgo = (isoStr) => {
 
 export default function UserProduct() {
   const { productId } = useParams();
+  const isAuction = window.location.pathname.startsWith("/auctions/");
+
   const navigate = useNavigate();
 
   const { user } = useAuthStore();
@@ -222,25 +224,35 @@ export default function UserProduct() {
     following: 0,
   });
 
+  const formatAuctionTime = (isoString) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    const year = date.getFullYear().toString().slice(-2);
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    const hour = date.getHours().toString().padStart(2, "0");
+    const minute = date.getMinutes().toString().padStart(2, "0");
+
+    return `${year}.${month}.${day}. ${hour}시 ${minute}분`;
+  };
+
   // ✅ 상품 상세 + 이미지 presign
   useEffect(() => {
+    if (!productId) return;
+
     const fetchPost = async () => {
       try {
-        setLoading(true);
-        const res = await api.get(`/api/posts/${productId}`); // ✅ 항상 조회수 +1
-        const data = res.data;
-
-        if (!data) {
-          setPost(null);
-          setImages([]);
-          setLoading(false);
-          return;
+        let response;
+        if (isAuction) {
+          response = await postService.getAuction(productId);
+        } else {
+          response = await postService.getPost(productId);
         }
 
-        setPost(data);
+        setPost(response);
 
         // ⭐ 여러 장 이미지 키 추출 → presign URL 변환
-        const keys = extractImageKeys(data);
+        const keys = extractImageKeys(response);
 
         if (keys.length > 0) {
           try {
@@ -284,29 +296,29 @@ export default function UserProduct() {
       fetchedRef.current = true;
       fetchPost();
     }
-  }, [productId]);
+  }, [productId, isAuction]);
 
   // 판매자 정보
   useEffect(() => {
     const fetchSeller = async () => {
       try {
-        setTabCounts(await getStatisticsByUserProfile(post?.user?.id));
-        setIsFollowing(post?.user?.following);
+        setTabCounts(await getStatisticsByUserProfile(post?.seller?.id));
+        setIsFollowing(post?.seller?.following);
       } catch (err) {
         console.error("❌ 유저 조회 실패:", err);
       }
     };
 
-    if (post?.user?.id) fetchSeller();
-  }, [post?.user?.id, post?.user?.following, getStatisticsByUserProfile]);
+    if (post?.seller?.id) fetchSeller();
+  }, [post?.seller?.id, post?.seller?.following, getStatisticsByUserProfile]);
 
   const handleToggleFollow = async () => {
-    await toggleFollow(post?.user?.id);
-    setTabCounts(await getStatisticsByUserProfile(post?.user?.id));
+    await toggleFollow(post?.seller?.id);
+    setTabCounts(await getStatisticsByUserProfile(post?.seller?.id));
     setIsFollowing(!isfollowing);
   };
 
-  const isOwnProduct = post?.user?.id === user?.id;
+  const isOwnProduct = post?.seller?.id === user?.id;
 
   const onToggleLike = async () => {
     if (!post?.id) return;
@@ -328,14 +340,14 @@ export default function UserProduct() {
       navigate("/login");
       return;
     }
-    if (user.id === post.user.id) {
+    if (user.id === post.seller.id) {
       alert("자신의 상품과는 채팅할 수 없습니다.");
       return;
     }
 
     try {
       // 채팅방 생성/조회 요청
-      const res = await chatApi.createOrGetRoom(post.user.id);
+      const res = await chatApi.createOrGetRoom(post.seller.id);
       const roomId = res.data;
 
       // 채팅방으로 이동
@@ -359,6 +371,25 @@ export default function UserProduct() {
       alert("결제 준비에 실패했습니다.");
     }
   };
+
+  const auctionStatus = useMemo(() => {
+    if (!isAuction || !post?.startTime || !post?.endTime) return null;
+
+    const now = new Date().getTime();
+    const start = new Date(post.startTime).getTime();
+    const end = new Date(post.endTime).getTime();
+
+    if (now < start) {
+      return "PENDING"; // 경매 대기
+    } else if (now >= start && now <= end) {
+      return "ACTIVE"; // 경매 진행
+    } else {
+      return "ENDED"; // 경매 종료
+    }
+  }, [isAuction, post?.startTime, post?.endTime]);
+
+  const isBidDisabled =
+    auctionStatus === "PENDING" || auctionStatus === "ENDED";
 
   const findCategoryName = (code) => {
     if (!code) {
@@ -457,6 +488,22 @@ export default function UserProduct() {
       </div>
     );
 
+  let statusText = "일반 상품";
+  let statusBgColor = "bg-gray-400"; // 일반 상품 기본 색상 (예시)
+
+  if (isAuction) {
+    if (auctionStatus === "PENDING") {
+      statusText = "경매 대기";
+      statusBgColor = "bg-red-700";
+    } else if (auctionStatus === "ACTIVE") {
+      statusText = "경매 진행";
+      statusBgColor = "bg-rebay-green"; // 진행 중
+    } else if (auctionStatus === "ENDED") {
+      statusText = "경매 종료";
+      statusBgColor = "bg-gray-500"; // 종료
+    }
+  }
+
   return (
     <MainLayout>
       <Header />
@@ -473,7 +520,13 @@ export default function UserProduct() {
           {isOwnProduct && (
             <div className="pt-1 flex gap-2">
               <button
-                onClick={() => navigate(`/products/${post.id}/edit`)}
+                onClick={() => {
+                  if (isAuction) {
+                    navigate(`/auctions/${post.id}/edit`);
+                  } else {
+                    navigate(`/products/${post.id}/edit`);
+                  }
+                }}
                 className="cursor-pointer inline-flex items-center justify-center rounded-lg border border-rebay-gray-400 px-4 py-2 hover:bg-gray-100"
               >
                 수정
@@ -587,6 +640,17 @@ export default function UserProduct() {
                 <div className="text-[24px] font-bold">
                   {post?.price != null ? `${priceFormat(post.price)}원` : ""}
                 </div>
+                {isAuction && (
+                  <div className="flex items-center space-x-2 text-lg">
+                    <div className="rounded-full  px-2 bg-black text-white font-semibold">
+                      {formatAuctionTime(post?.startTime)}
+                    </div>
+                    <div>~</div>
+                    <div className="rounded-full px-2 bg-black text-white font-semibold">
+                      {formatAuctionTime(post?.endTime)}
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-5 text-sm text-gray-500">
                 <span>{timeAgo(post?.createdAt)}</span>
@@ -596,17 +660,35 @@ export default function UserProduct() {
               </div>
               {!isOwnProduct && (
                 <div className="pt-1 flex gap-3">
-                  <button
-                    onClick={handlePurchase}
-                    className="cursor-pointer inline-flex items-center justify-center rounded-lg bg-rebay-blue text-white px-7 py-3 text-[15px] shadow hover:shadow-md transition-all font-semibold hover:opacity-90"
-                  >
-                    구매하기
-                  </button>
+                  {isAuction ? (
+                    <button
+                      disabled={isBidDisabled}
+                      className={`inline-flex cursor-pointer items-center justify-center rounded-lg ${statusBgColor} text-white px-7 py-3 text-[15px] shadow hover:shadow-md transition-all font-semibold 
+                        ${
+                          isBidDisabled
+                            ? "opacity-50 cursor-not-allowed bg-gray-400"
+                            : "hover:opacity-90"
+                        }`}
+                    >
+                      {isBidDisabled ? (
+                        <div>{statusText}</div>
+                      ) : (
+                        <div>입찰하기</div>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handlePurchase}
+                      className="cursor-pointer inline-flex items-center  justify-center rounded-lg bg-rebay-blue text-white px-7 py-3 text-[15px] shadow hover:shadow-md transition-all font-semibold hover:opacity-90"
+                    >
+                      구매하기
+                    </button>
+                  )}
 
                   {/* 채팅하기 버튼 */}
                   <button
                     onClick={handleStartChat}
-                    className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 px-7 py-3 text-[15px] font-semibold hover:bg-gray-50 transition"
+                    className="cursor-pointer inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 px-7 py-3 text-[15px] font-semibold hover:bg-gray-50 transition"
                   >
                     채팅하기
                   </button>
@@ -646,11 +728,11 @@ export default function UserProduct() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-14 h-14 rounded-full ">
-                    <Avatar user={post?.user} size="small" />
+                    <Avatar user={post?.seller} size="small" />
                   </div>
                   <div className="leading-tight">
                     <div className="font-medium">
-                      {post?.user?.username || "판매자"}
+                      {post?.seller?.username || "판매자"}
                     </div>
                     <div className="text-xs text-gray-500">
                       상품{tabCounts.post} · 팔로워 {tabCounts.follower}
@@ -680,7 +762,7 @@ export default function UserProduct() {
 
               <div className="mt-5">
                 <div className="text-sm font-medium mb-2">최근 후기</div>
-                <ReviewList user={post?.user} variant="compact" />
+                <ReviewList user={post?.seller} variant="compact" />
               </div>
             </div>
           </div>

@@ -12,7 +12,6 @@ import useStatisticsStore from "../../store/statisticsStore";
 import Trade from "./Trade";
 import aiService from "../../services/ai";
 import { FiCpu } from "react-icons/fi";
-import auctionService from "../../services/auction";
 
 /** ========== 카테고리 계층 ========== */
 const CATEGORY_HIERARCHY = {
@@ -89,6 +88,7 @@ const parseHashtags = (input) =>
 const ProductCreate = ({ onCreated, goBack }) => {
   const navigate = useNavigate();
   const { productId } = useParams();
+  const isAuction = window.location.pathname.startsWith("/auctions/");
   const [postId, setPostId] = useState(0);
   const [auctionId, setAuctionId] = useState(0);
   const [data, setData] = useState();
@@ -117,11 +117,11 @@ const ProductCreate = ({ onCreated, goBack }) => {
 
   // 상품 타입
   const PRODUCT_TYPE = {
-    GENERAL: "GENERAL",
+    NORMAL: "NORMAL",
     AUCTION: "AUCTION",
   };
 
-  const [productType, setProductType] = useState(PRODUCT_TYPE.GENERAL);
+  const [productType, setProductType] = useState(PRODUCT_TYPE.NORMAL);
 
   /** 카테고리 */
   const [selectedLgCode, setSelectedLgCode] = useState(DEFAULT_LARGE_CODE);
@@ -200,24 +200,25 @@ const ProductCreate = ({ onCreated, goBack }) => {
       let errorOccurred = false;
 
       try {
-        loadedData = await postService.getPost(productId);
-        type = PRODUCT_TYPE.GENERAL;
-      } catch (e) {
-        try {
-          loadedData = await auctionService.getAuction(productId);
+        if (isAuction) {
+          loadedData = await postService.getAuction(productId);
           type = PRODUCT_TYPE.AUCTION;
-        } catch (e) {
-          console.error("상품 정보를 불러오지 못했습니다. ID:", productId, e);
-          setError("상품 정보를 불러오지 못했습니다. ID를 확인하세요.");
-          errorOccurred = true;
+        } else {
+          loadedData = await postService.getPost(productId);
+          type = PRODUCT_TYPE.NORMAL;
         }
+      } catch (e) {
+        console.error("상품 정보를 불러오지 못했습니다. ID:", productId, e);
+        setError("상품 정보를 불러오지 못했습니다. ID를 확인하세요.");
+        errorOccurred = true;
       }
+      console.log(loadedData);
 
       if (loadedData && type) {
         setProductType(type);
         setData(loadedData);
 
-        if (type === PRODUCT_TYPE.GENERAL) {
+        if (type === PRODUCT_TYPE.NORMAL) {
           setPostId(productId);
           setAuctionId(0);
         } else {
@@ -514,13 +515,59 @@ const ProductCreate = ({ onCreated, goBack }) => {
       setError("카테고리를 선택해주세요.");
       return;
     }
+    if (!form.title) {
+      setError("제목을 입력해주세요.");
+      return;
+    }
+    if (!form.content) {
+      setError("내용을 입력해주세요.");
+      return;
+    }
+    if (!form.price) {
+      setError("가격을 입력해주세요.");
+      return;
+    }
+
+    if (productType === "POST" && form.price <= 0) {
+      setError("판매 가격은 0원보다 커야 합니다.");
+      return;
+    }
+
+    if (productType === "AUCTION") {
+      if (form.price <= 0) {
+        setError("경매 시작 가격은 0원보다 커야 합니다.");
+        return;
+      }
+
+      if (!form.startTime || !form.endTime) {
+        setError("경매 시작 시간과 종료 시간을 설정해주세요.");
+        return;
+      }
+
+      const now = new Date();
+      const start = new Date(form.startTime);
+      const end = new Date(form.endTime);
+      const minDurationMs = 5 * 60 * 1000;
+
+      // 시작 시간이 현재 시각 이전인지 검증
+      if (start.getTime() <= now.getTime()) {
+        setError("경매 시작 시간은 현재 시각보다 늦어야 합니다.");
+        return;
+      }
+
+      // 종료 시간이 시작 시간보다 최소 5분 이후인지 검증
+      if (end.getTime() <= start.getTime() + minDurationMs) {
+        setError("경매 종료 시간은 시작 시간보다 최소 5분 이후여야 합니다.");
+        return;
+      }
+    }
 
     const imgUrls = images.map((img) => img.url).filter(Boolean);
 
     const payload = {
       title: form.title.trim(),
       content: form.content.trim(),
-      startPrice: Number(form.price),
+      price: Number(form.price),
       categoryCode: form.finalCategoryCode,
       imageUrl: imgUrls[0] || null,
       imageUrls: imgUrls,
@@ -533,37 +580,19 @@ const ProductCreate = ({ onCreated, goBack }) => {
 
     try {
       if (isEdit) {
-        if (productType === "GENERAL") {
-          const PostData = {
-            title: payload.title,
-            content: payload.content,
-            price: payload.startPrice,
-            categoryCode: payload.categoryCode,
-            imageUrl: payload.imageUrl,
-            imageUrls: payload.imageUrls,
-            hashtags: payload.hashtags,
-          };
-          await postService.updatePost(postId, PostData);
+        if (productType === "NORMAL") {
+          await postService.updatePost(postId, payload);
           navigate(`/products/${postId}`);
         } else {
-          await auctionService.updateAuction(auctionId, payload);
+          await postService.updateAuction(auctionId, payload);
           navigate(`/auctions/${auctionId}`);
         }
       } else {
-        if (productType === "GENERAL") {
-          const PostData = {
-            title: payload.title,
-            content: payload.content,
-            price: payload.startPrice,
-            categoryCode: payload.categoryCode,
-            imageUrl: payload.imageUrl,
-            imageUrls: payload.imageUrls,
-            hashtags: payload.hashtags,
-          };
-          const data = await postService.createPost(PostData);
+        if (productType === "NORMAL") {
+          const data = await postService.createPost(payload);
           navigate(`/products/${data.id}`);
         } else {
-          const data = await auctionService.createAuction(payload);
+          const data = await postService.createAuction(payload);
           navigate(`/auctions/${data.id}`);
         }
       }
@@ -589,7 +618,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
       if (!window.confirm("작성 중인 내용이 있습니다. 취소할까요?")) return;
     }
 
-    if (productType === "GENERAL") {
+    if (productType === "NORMAL") {
       navigate(isEdit ? `/products/${postId}` : "/");
     } else {
       navigate(isEdit ? `/auctions/${auctionId}` : "/");
@@ -618,7 +647,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
 
         <div className="bg-white p-4 rounded-xl shadow-sm flex space-x-4 mb-10">
           <TabButton
-            type={PRODUCT_TYPE.GENERAL}
+            type={PRODUCT_TYPE.NORMAL}
             // icon={<ShoppingCart className="w-8 h-8" />}
             label="일반 상품 등록"
           />
@@ -932,7 +961,13 @@ const ProductCreate = ({ onCreated, goBack }) => {
 
           {/* 가격 */}
           <section>
-            <label className="block text-sm font-medium mb-2">가격(원)</label>
+            {productType === "AUCTION" ? (
+              <label className="block text-sm font-medium mb-2">
+                시작가(원)
+              </label>
+            ) : (
+              <label className="block text-sm font-medium mb-2">가격(원)</label>
+            )}
             <input
               name="price"
               type="number"
