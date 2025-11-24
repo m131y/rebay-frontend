@@ -11,11 +11,9 @@ const postService = {
     return response.data.content;
   },
 
-  getUserPosts: async (page, size, userId) => {
-    const response = await api.get(`/api/posts/user/${userId}`, {
-      params: { page, size },
-    });
-    return response.data.content;
+  getUserPosts: async (userId) => {
+    const response = await api.get(`/api/posts/user/${userId}`);
+    return response.data;
   },
 
   getUserPostCount: async (userId) => {
@@ -80,6 +78,11 @@ const postService = {
 
   getAllProducts: async (params) => {
     const response = await api.get("/api/products", { params: params });
+    return response.data;
+  },
+
+  getUserProducts: async (userId) => {
+    const response = await api.get(`/api/products/${userId}`);
     return response.data;
   },
 };

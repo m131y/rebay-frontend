@@ -25,7 +25,7 @@ const Product = ({ post, onClick, variant = "default", type }) => {
 
     const loadImage = async () => {
       try {
-        const fileKey = post?.imageUrl || "";
+        const fileKey = post?.thumbnailImageUrl || "";
         if (!fileKey) {
           if (!cancelled) {
             setSignedUrl("");
@@ -51,7 +51,7 @@ const Product = ({ post, onClick, variant = "default", type }) => {
     return () => {
       cancelled = true;
     };
-  }, [post?.imageUrl]);
+  }, [post?.thumbnailImageUrl]);
 
   const handleClick = () => {
     if (typeof onClick === "function") return onClick(post);
