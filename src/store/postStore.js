@@ -43,12 +43,11 @@ const usePostStore = create((set) => ({
     }
   },
 
-  getUserPosts: async (userId, page = 0) => {
+  getUserPosts: async (userId) => {
     set({ loading: true, error: null });
     try {
-      const content = await postService.getUserPosts(page, 20, userId);
+      const content = await postService.getUserPosts(userId);
       set({
-        userPosts: content,
         loading: false,
       });
     } catch (err) {
@@ -66,7 +65,6 @@ const usePostStore = create((set) => ({
       const count = await postService.getUserPostCount(userId);
 
       set({
-        userPostCount: count,
         loading: false,
       });
     } catch (err) {
@@ -108,6 +106,24 @@ const usePostStore = create((set) => ({
     } catch (err) {
       set({
         error: err.response?.data.message || "Failed to delete post",
+        loading: false,
+      });
+      throw err;
+    }
+  },
+
+  getUserProducts: async (userId) => {
+    set({ loading: true, error: null });
+    try {
+      const content = await postService.getUserProducts(userId);
+      set({
+        userPosts: content,
+        userPostCount: content.length,
+        loading: false,
+      });
+    } catch (err) {
+      set({
+        error: err.response?.data.message || "Failed to get user product",
         loading: false,
       });
       throw err;

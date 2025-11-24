@@ -18,7 +18,7 @@ const UserProfile = () => {
   const { targetUserId } = useParams();
 
   const { user } = useAuthStore();
-  const { userPosts, getUserPosts } = usePostStore();
+  const { userPosts, getUserProducts } = usePostStore();
   const { userProfile, getUserProfile } = useUserStore();
   const { getStatisticsByUserProfile } = useStatisticsStore();
   const { followers, following, toggleFollow, getFollowers, getFollowing } =
@@ -27,20 +27,30 @@ const UserProfile = () => {
   const navigate = useNavigate();
 
   const navItems = [
-    { id: "post", label: "상품" },
+    { id: "all", label: "상품" },
     { id: "review", label: "후기" },
     { id: "follower", label: "팔로워" },
     { id: "following", label: "팔로잉" },
   ];
 
-  const [activeTab, setActiveTab] = useState("post");
+  const [activeTab, setActiveTab] = useState("all");
   const [showPost, setShowPost] = useState(true);
   const [showReview, setShowReview] = useState(false);
   const [showFollower, setShowFollower] = useState(false);
   const [showFollowing, setShowFollowing] = useState(false);
 
+  const PRODUCT_TYPES = {
+    ALL: "ALL",
+    NORMAL: "POST",
+    AUCTION: "AUCTION",
+  };
+
+  const [selectedType, setSelectedType] = useState(PRODUCT_TYPES.ALL);
+
   const [tabCounts, setTabCounts] = useState({
+    all: 0,
     post: 0,
+    auction: 0,
     review: 0,
     follower: 0,
     following: 0,
@@ -49,7 +59,7 @@ const UserProfile = () => {
   const handleTabChange = (tabId) => {
     setActiveTab(tabId);
 
-    if (tabId == "post") {
+    if (tabId == "all") {
       setShowPost(true);
       setShowReview(false);
       setShowFollower(false);
@@ -95,7 +105,11 @@ const UserProfile = () => {
     if (!user) {
       setShowLogin(true);
     } else {
-      navigate(`/products/${post.id}`);
+      if (post.productType === "AUCTION") {
+        navigate(`/auctions/${post.productId}`);
+      } else {
+        navigate(`/products/${post.productId}`);
+      }
     }
   };
 
@@ -139,14 +153,15 @@ const UserProfile = () => {
     const loadUserPosts = async () => {
       try {
         if (targetUserId) {
-          await getUserPosts(targetUserId);
+          await getUserProducts(targetUserId);
         }
       } catch (err) {
         console.error(err);
       }
     };
     loadUserPosts();
-  }, [getUserPosts, tabCounts, targetUserId]);
+    console.log(userPosts);
+  }, [getUserProducts, tabCounts, targetUserId]);
 
   const isOwnProfile = userProfile?.id === user?.id;
 
@@ -243,18 +258,65 @@ const UserProfile = () => {
               })}
             </div>
 
+            {showPost && (
+              <div className="w-[990px] flex justify-end ">
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {/* 전체 버튼 */}
+                  <button
+                    onClick={() => setSelectedType(PRODUCT_TYPES.ALL)}
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
+                      selectedType === PRODUCT_TYPES.ALL
+                        ? "bg-blue-600 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {`전체 상품 (${tabCounts["all"]})`}
+                  </button>
+                  {/* 일반 상품 버튼 */}
+                  <button
+                    onClick={() => setSelectedType(PRODUCT_TYPES.NORMAL)}
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
+                      selectedType === PRODUCT_TYPES.NORMAL
+                        ? "bg-blue-500 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {`일반 상품 (${tabCounts["post"]})`}
+                  </button>
+                  {/* 경매 상품 버튼 */}
+                  <button
+                    onClick={() => setSelectedType(PRODUCT_TYPES.AUCTION)}
+                    className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
+                      selectedType === PRODUCT_TYPES.AUCTION
+                        ? "bg-red-500 text-white"
+                        : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    }`}
+                  >
+                    {`경매 상품 (${tabCounts["auction"]})`}
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="w-[990px] h-auto">
               {showPost && (
                 <section className="mt-[20px] w-full h-auto flex flex-col items-center justify-start space-y-5 mx-auto">
                   <div className="w-full h-auto">
                     <div className="grid grid-cols-5 gap-[10px]">
-                      {userPosts.map((post) => (
-                        <Product
-                          key={post.id}
-                          post={post}
-                          onClick={handleProductClick}
-                        />
-                      ))}
+                      {userPosts
+                        .filter(
+                          (post) =>
+                            selectedType === PRODUCT_TYPES.ALL ||
+                            post.productType === selectedType
+                        )
+                        .map((post, index) => (
+                          <Product
+                            key={index}
+                            post={post}
+                            onClick={handleProductClick}
+                            type={post.productType}
+                          />
+                        ))}
                     </div>
                   </div>
                 </section>
