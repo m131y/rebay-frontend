@@ -11,11 +11,20 @@ import {
 
 import userService from "../services/user";
 import useAuthStore from "../store/authStore";
+import usePostStore from "../store/postStore";
 
 const UserTransactions = () => {
   const { id: userId } = useParams();
   const navigate = useNavigate();
   const { user } = useAuthStore();
+  const { userPosts } = usePostStore();
+
+  // 게시글 종류
+  const TRADE_TYPES = {
+    ALL: "ALL",
+    NORMAL: "NORMAL",
+    AUCTION: "AUCTION",
+  };
 
   // 대시보드 탭
   const navItems = [
@@ -23,12 +32,19 @@ const UserTransactions = () => {
     { id: "seller", label: "판매 내역" },
   ];
 
-  const [activeTab, setActiveTab] = useState("buyer");
-
   // 페이징 상태
   const [buyerPage, setBuyerPage] = useState(0);
   const [sellerPage, setSellerPage] = useState(0);
   const size = 10;
+
+  // 각 탭의 상태 및 필터
+  const [activeTab, setActiveTab] = useState("buyer");
+  const [buyerFilter, setBuyerFilter] = useState(TRADE_TYPES.ALL);
+  const [sellerFilter, setSellerFilter] = useState(TRADE_TYPES.ALL);
+
+  const [sellerInfo, setSellerInfo] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [confirming, setConfirming] = useState(null);
 
   // Page 객체 저장
   const [buyerTransactions, setBuyerTransactions] = useState({
@@ -42,11 +58,6 @@ const UserTransactions = () => {
     number: 0,
   });
 
-  const [sellerInfo, setSellerInfo] = useState(null);
-
-  const [loading, setLoading] = useState(false);
-  const [confirming, setConfirming] = useState(null);
-
   // 판매 통계
   const [stats, setStats] = useState({
     total: 0,
@@ -54,6 +65,29 @@ const UserTransactions = () => {
     completed: 0,
     totalEarnings: 0,
   });
+
+  // 탭 변경에 따라 로딩
+  useEffect(() => {
+    if (activeTab === "buyer") {
+      setBuyerPage(0);
+      loadBuyerTransactions();
+    } else {
+      setSellerPage(0);
+      loadSellerTransactions();
+    }
+  }, [activeTab, userId]);
+
+  // 페이징 이동 시 로드
+  useEffect(() => {
+    if (activeTab === "buyer") loadBuyerTransactions();
+  }, [buyerPage]);
+
+  useEffect(() => {
+    if (activeTab === "seller") loadSellerTransactions();
+  }, [sellerPage]);
+
+  const transactions =
+    activeTab === "buyer" ? buyerTransactions : sellerTransactions;
 
   // 상태 텍스트
   const getStatusText = (status) => {
@@ -81,12 +115,72 @@ const UserTransactions = () => {
     return map[status] || "bg-gray-100 text-gray-800";
   };
 
+  // 카드 클릭 핸들러
+  const handleCardClick = (t) => {
+    const auctionStatus = t.auctionStatus;
+
+    if (t.productType === "AUCTION" && auctionStatus === "BIDDING") {
+      return navigate(`/auctions/${t.postId}`);
+    }
+
+    return navigate(`/transaction/${t.id}`);
+  };
+
+  // 구매자 수령 확인 핸들러
+  const handleConfirmReceipt = async (transactionId, e) => {
+    e.stopPropagation();
+    if (
+      !window.confirm("상품을 받으셨나요? 수령 확인 시 판매자에게 정산됩니다.")
+    )
+      return;
+
+    try {
+      setConfirming(transactionId);
+      await confirmReceipt(transactionId, parseInt(userId));
+      alert("상품 수령이 확인되었습니다.");
+      loadBuyerTransactions();
+    } catch (err) {
+      console.error(err);
+      alert("수령 확인 실패");
+    } finally {
+      setConfirming(null);
+    }
+  };
+
+  // API 요청
   // 구매 내역 로드
   const loadBuyerTransactions = async () => {
     try {
       setLoading(true);
       const data = await getBuyerTransactions(userId, buyerPage, size);
-      setBuyerTransactions(data);
+
+      // 임시 dummy
+      data.content.push({
+        id: 999999,
+        productName: "테스트 경매 상품",
+        sellerName: "경매판매자",
+        buyerName: "경매구매자",
+        orderId: "AUC-TEST-001",
+        amount: 150000,
+        status: "PAYMENT_PENDING",
+        productType: "AUCTION",
+        auctionStatus: "LOSE",
+        createdAt: new Date().toISOString(),
+      });
+
+      // productId를 기준으로 productType 주입
+      const mapped = {
+        ...data,
+        content: data.content.map((t) => {
+          const post = userPosts.find((p) => p.productId === t.productId);
+          return {
+            ...t,
+            productType: t.productType ?? post?.productType ?? "NORMAL",
+          };
+        }),
+      };
+
+      setBuyerTransactions(mapped);
     } catch (err) {
       console.error(err);
       alert("구매 내역 조회 실패");
@@ -106,7 +200,19 @@ const UserTransactions = () => {
       ]);
 
       setSellerInfo(userData);
-      setSellerTransactions(transactionData);
+
+      const mapped = {
+        ...transactionData,
+        content: transactionData.content.map((t) => {
+          const post = userPosts.find((p) => p.productId === t.productId);
+          return {
+            ...t,
+            productType: post?.productType ?? "NORMAL",
+          };
+        }),
+      };
+
+      setSellerTransactions(mapped);
 
       // 판매 통계 계산
       if (sellerPage === 0) {
@@ -135,45 +241,47 @@ const UserTransactions = () => {
     }
   };
 
-  // 탭 변경에 따라 로딩
-  useEffect(() => {
-    if (activeTab === "buyer") {
-      setBuyerPage(0);
-      loadBuyerTransactions();
-    } else {
-      setSellerPage(0);
-      loadSellerTransactions();
+  // 경매 상태 뱃지 UI 함수 (dummy)
+  const getAuctionStatusBadge = (status) => {
+    if (!status) return null;
+
+    if (status === "BIDDING") {
+      return (
+        <span className="px-2 py-1 rounded-md text-xs font-semibold bg-gray-200 text-gray-700">
+          📝 입찰 중
+        </span>
+      );
     }
-  }, [activeTab, userId]);
 
-  // 페이징 이동 시 로드
-  useEffect(() => {
-    if (activeTab === "buyer") loadBuyerTransactions();
-  }, [buyerPage]);
-
-  useEffect(() => {
-    if (activeTab === "seller") loadSellerTransactions();
-  }, [sellerPage]);
-
-  // 구매자 수령 확인
-  const handleConfirmReceipt = async (transactionId, e) => {
-    e.stopPropagation();
-    if (
-      !window.confirm("상품을 받으셨나요? 수령 확인 시 판매자에게 정산됩니다.")
-    )
-      return;
-
-    try {
-      setConfirming(transactionId);
-      await confirmReceipt(transactionId, parseInt(userId));
-      alert("상품 수령이 확인되었습니다.");
-      loadBuyerTransactions();
-    } catch (err) {
-      console.error(err);
-      alert("수령 확인 실패");
-    } finally {
-      setConfirming(null);
+    if (status === "WON") {
+      return (
+        <span className="px-2 py-1 rounded-md text-xs font-semibold bg-amber-100 text-amber-800">
+          ✨ 낙찰
+        </span>
+      );
     }
+
+    return (
+      <span className="px-2 py-1 rounded-md text-xs font-semibold bg-red-100 text-red-700">
+        ❌ 패찰
+      </span>
+    );
+  };
+
+  // 글 종류 뱃지
+  const getProductTypeBadge = (type) => {
+    if (type === "AUCTION") {
+      return (
+        <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-red-500 text-white">
+          🔨 경매
+        </span>
+      );
+    }
+    return (
+      <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-blue-500 text-white">
+        💰 중고거래
+      </span>
+    );
   };
 
   // 거래 카드 렌더링
@@ -184,11 +292,18 @@ const UserTransactions = () => {
       <div
         key={t.id}
         className="bg-white border rounded-lg p-6 hover:shadow-lg transition-shadow w-full mb-4 cursor-pointer"
-        onClick={() => navigate(`/transaction/${t.id}`)}
+        onClick={() => handleCardClick(t)}
       >
         {/* 상품 정보 */}
         <div className="flex justify-between items-start mb-4">
           <div>
+            <div className="flex items-center gap-2 mb-2">
+              {getProductTypeBadge(t.productType)}
+
+              {t.productType === "AUCTION" &&
+                getAuctionStatusBadge(t.auctionStatus)}
+            </div>
+
             <h3 className="text-xl font-semibold mb-2">{t.productName}</h3>
             <p className="text-sm text-gray-600 mb-1">
               {isBuyerTab
@@ -243,8 +358,16 @@ const UserTransactions = () => {
     );
   };
 
-  const transactions =
-    activeTab === "buyer" ? buyerTransactions : sellerTransactions;
+  const filteredList =
+    activeTab === "buyer"
+      ? buyerTransactions.content.filter((t) => {
+          if (buyerFilter === TRADE_TYPES.ALL) return true;
+          return t.productType === buyerFilter;
+        })
+      : sellerTransactions.content.filter((t) => {
+          if (sellerFilter === TRADE_TYPES.ALL) return true;
+          return t.productType === sellerFilter;
+        });
 
   return (
     <MainLayout>
@@ -333,13 +456,89 @@ const UserTransactions = () => {
           </div>
         )}
 
+        {/* 구매 필터 */}
+        {activeTab === "buyer" && (
+          <div className="w-[990px] mb-6 flex gap-2">
+            <button
+              onClick={() => setBuyerFilter(TRADE_TYPES.ALL)}
+              className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                buyerFilter === TRADE_TYPES.ALL
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              전체
+            </button>
+
+            <button
+              onClick={() => setBuyerFilter(TRADE_TYPES.NORMAL)}
+              className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                buyerFilter === TRADE_TYPES.NORMAL
+                  ? "bg-blue-500 text-white"
+                  : "bg-blue-100 text-blue-700"
+              }`}
+            >
+              중고거래
+            </button>
+
+            <button
+              onClick={() => setBuyerFilter(TRADE_TYPES.AUCTION)}
+              className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                buyerFilter === TRADE_TYPES.AUCTION
+                  ? "bg-red-500 text-white"
+                  : "bg-red-100 text-red-700"
+              }`}
+            >
+              경매
+            </button>
+          </div>
+        )}
+
+        {/* 판매 필터 */}
+        {activeTab === "seller" && (
+          <div className="w-[990px] mb-6 flex gap-2">
+            <button
+              onClick={() => setSellerFilter(TRADE_TYPES.ALL)}
+              className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                sellerFilter === TRADE_TYPES.ALL
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-100 text-gray-700"
+              }`}
+            >
+              전체
+            </button>
+
+            <button
+              onClick={() => setSellerFilter(TRADE_TYPES.NORMAL)}
+              className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                sellerFilter === TRADE_TYPES.NORMAL
+                  ? "bg-blue-500 text-white"
+                  : "bg-blue-100 text-blue-700"
+              }`}
+            >
+              중고거래
+            </button>
+
+            <button
+              onClick={() => setSellerFilter(TRADE_TYPES.AUCTION)}
+              className={`px-4 py-2 rounded-full text-sm font-semibold ${
+                sellerFilter === TRADE_TYPES.AUCTION
+                  ? "bg-red-500 text-white"
+                  : "bg-red-100 text-red-700"
+              }`}
+            >
+              경매거래
+            </button>
+          </div>
+        )}
+
         {/* 리스트 */}
         <div className="w-[990px]">
           {loading ? (
             <div className="flex justify-center items-center py-20 text-xl">
               로딩 중...
             </div>
-          ) : transactions.content.length === 0 ? (
+          ) : filteredList.length === 0 ? (
             <div className="bg-white p-12 rounded-lg shadow text-center">
               <p className="text-gray-500 text-lg mb-6">
                 {activeTab === "buyer"
@@ -354,7 +553,7 @@ const UserTransactions = () => {
               </button>
             </div>
           ) : (
-            transactions.content.map((t) =>
+            filteredList.map((t) =>
               renderTransactionCard(t, activeTab === "buyer")
             )
           )}

@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { getTransaction, confirmReceipt } from "../services/payment";
 import useAuthStore from "../store/authStore";
 import CreateReview from "../components/review/createReview";
+import { preparePayment } from "../services/payment";
 
 const TransactionDetail = () => {
   const { transactionId } = useParams();
@@ -96,6 +97,12 @@ const TransactionDetail = () => {
     return colorMap[status] || "bg-gray-100 text-gray-800";
   };
 
+  const handlePayment = () => {
+    navigate("/checkout", {
+      state: { transaction },
+    });
+  };
+
   // 로딩 중 UI
   if (loading) {
     return (
@@ -128,6 +135,7 @@ const TransactionDetail = () => {
               >
                 홈으로
               </button>
+
               <button
                 onClick={() => window.location.reload()}
                 className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
@@ -148,6 +156,10 @@ const TransactionDetail = () => {
   const canConfirmReceipt =
     !isSeller && transaction.status === "PAID" && !transaction.isReceived;
 
+  const canPayment =
+    !isSeller &&
+    (transaction.status === "PAYMENT_PENDING" ||
+      transaction.status === "READY");
   return (
     <div className="font-presentation container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
@@ -294,6 +306,14 @@ const TransactionDetail = () => {
           >
             홈으로
           </button>
+          {canPayment && (
+            <button
+              onClick={handlePayment}
+              className="cursor-pointer flex-1 px-6 py-3 bg-rebay-blue text-white rounded-lg hover:opacity-90 font-semibold"
+            >
+              거래하기
+            </button>
+          )}
           {canConfirmReceipt && (
             <button
               onClick={handleConfirmReceipt}
