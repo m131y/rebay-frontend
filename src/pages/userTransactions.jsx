@@ -12,6 +12,7 @@ import {
 import userService from "../services/user";
 import useAuthStore from "../store/authStore";
 import usePostStore from "../store/postStore";
+import postService from "../services/post";
 
 const UserTransactions = () => {
   const { id: userId } = useParams();
@@ -65,6 +66,57 @@ const UserTransactions = () => {
     completed: 0,
     totalEarnings: 0,
   });
+
+  // 경매 종료 체크 및 처리 함수
+  const checkAndCloseAuctions = async (transactions) => {
+    const now = new Date();
+    const updatedTransactions = [...transactions];
+    let hasChanges = false;
+
+    for (let i = 0; i < updatedTransactions.length; i++) {
+      const t = updatedTransactions[i];
+
+      // 경매 상품이고, BIDDING 상태인 것만 체크
+      if (t.productType === "AUCTION" && t.auctionStatus === "BIDDING") {
+        const post = userPosts.find((p) => p.id === t.postId);
+        const endTime = post?.endTime;
+
+        if (!endTime) {
+          console.warn(`경매 ${t.postId}의 endTime을 찾을 수 없습니다.`);
+          continue;
+        }
+
+        const endTimeDate = new Date(endTime);
+
+        // 종료 시간이 지났으면
+        if (now >= endTimeDate) {
+          try {
+            console.log(`경매 종료 처리 중: auctionId=${t.postId}`);
+
+            // 백엔드에 경매 종료 요청 (프론트의 endTime 전달)
+            const response = await postService.closeAuction(
+              t.postId,
+              endTimeDate.toISOString()
+            );
+
+            // 반환된 auctionStatus로 업데이트
+            updatedTransactions[i] = {
+              ...t,
+              auctionStatus: response.auctionStatus, // WON or LOSE
+              transactionId: response.transactionId,
+            };
+
+            hasChanges = true;
+            console.log(`경매 종료 완료: ${response.auctionStatus}`);
+          } catch (error) {
+            console.error(`경매 종료 처리 실패: auctionId=${t.postId}`, error);
+          }
+        }
+      }
+    }
+
+    return { transactions: updatedTransactions, hasChanges };
+  };
 
   // 탭 변경에 따라 로딩
   useEffect(() => {
@@ -154,33 +206,31 @@ const UserTransactions = () => {
       setLoading(true);
       const data = await getBuyerTransactions(userId, buyerPage, size);
 
-      // 임시 dummy
-      data.content.push({
-        id: 999999,
-        productName: "테스트 경매 상품",
-        sellerName: "경매판매자",
-        buyerName: "경매구매자",
-        orderId: "AUC-TEST-001",
-        amount: 150000,
-        status: "PAYMENT_PENDING",
-        productType: "AUCTION",
-        auctionStatus: "LOSE",
-        createdAt: new Date().toISOString(),
-      });
+      console.log("buyerTransaction:", data.content);
 
       // productId를 기준으로 productType 주입
-      const mapped = {
-        ...data,
-        content: data.content.map((t) => {
-          const post = userPosts.find((p) => p.productId === t.productId);
-          return {
-            ...t,
-            productType: t.productType ?? post?.productType ?? "NORMAL",
-          };
-        }),
-      };
+      let mapped = data.content.map((t) => {
+        const post = userPosts.find((p) => p.id === t.postId);
+        return {
+          ...t,
+          productType: t.transactionType === "DEFAULT" ? "NORMAL" : "AUCTION",
+          endTime: post?.endTime,
+        };
+      });
 
-      setBuyerTransactions(mapped);
+      // 경매 종료 체크 및 상태 업데이트
+      const { transactions: updatedTransactions, hasChanges } =
+        await checkAndCloseAuctions(mapped);
+
+      setBuyerTransactions({
+        ...data,
+        content: updatedTransactions,
+      });
+
+      // 변경사항이 있으면 다시 로드 (옵션)
+      if (hasChanges) {
+        console.log("경매 상태가 업데이트되었습니다.");
+      }
     } catch (err) {
       console.error(err);
       alert("구매 내역 조회 실패");
@@ -204,10 +254,10 @@ const UserTransactions = () => {
       const mapped = {
         ...transactionData,
         content: transactionData.content.map((t) => {
-          const post = userPosts.find((p) => p.productId === t.productId);
+          const post = userPosts.find((p) => p.id === t.postId);
           return {
             ...t,
-            productType: post?.productType ?? "NORMAL",
+            productType: t.transactionType === "DEFAULT" ? "NORMAL" : "AUCTION",
           };
         }),
       };
@@ -527,7 +577,7 @@ const UserTransactions = () => {
                   : "bg-red-100 text-red-700"
               }`}
             >
-              경매거래
+              경매
             </button>
           </div>
         )}

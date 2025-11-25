@@ -29,8 +29,8 @@ const priceFormat = (v) =>
   v == null
     ? ""
     : new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
-      Number(v)
-    );
+        Number(v)
+      );
 
 // ======================
 // A버전 공통 이미지 키 추출 함수
@@ -218,6 +218,9 @@ export default function UserProduct() {
   const [likeCount, setLikeCount] = useState(0);
   const [tradeHistoryList, setTradeHistoryList] = useState([]);
 
+  const [isClosingAuction, setIsClosingAuction] = useState(false);
+  const hasClosedRef = useRef(false); // 중복 호출 방지
+
   const fetchedRef = useRef(false);
 
   const [tabCounts, setTabCounts] = useState({
@@ -272,9 +275,8 @@ export default function UserProduct() {
       setPost((prev) => ({
         ...prev,
         price: data.currentPrice, // 현재가 갱신
-        currentPrice: data.currentPrice
+        currentPrice: data.currentPrice,
       }));
-
     });
 
     return () => {
@@ -282,7 +284,6 @@ export default function UserProduct() {
       console.log("경매 연결 종료");
     };
   }, [isAuction, post?.id, user]);
-
 
   // 입찰 버튼 클릭 핸들러
   const handleBid = async () => {
@@ -472,7 +473,9 @@ export default function UserProduct() {
   }, [isAuction, post?.startTime, post?.endTime]);
 
   const isBidDisabled =
-    auctionStatus === "PENDING" || auctionStatus === "ENDED";
+    auctionStatus === "PENDING" ||
+    auctionStatus === "ENDED" ||
+    isClosingAuction; // 종료 처리 중에도 비활성화
 
   const findCategoryName = (code) => {
     if (!code) {
@@ -522,6 +525,51 @@ export default function UserProduct() {
     () => findCategoryName(post?.categoryCode),
     [post?.categoryCode]
   );
+
+  useEffect(() => {
+    // 경매가 아니거나, 종료 상태가 아니면 스킵
+    if (!isAuction || auctionStatus !== "ENDED") {
+      return;
+    }
+
+    // 이미 처리했으면 스킵
+    if (hasClosedRef.current || isClosingAuction) {
+      return;
+    }
+
+    // 경매 종료 API 호출
+    const handleAuctionClose = async () => {
+      try {
+        setIsClosingAuction(true);
+        hasClosedRef.current = true;
+
+        console.log("경매 종료 처리 시작:", post.id);
+
+        // closeAuction API 호출 (endTime 전달)
+        const response = await postService.closeAuction(post.id, post.endTime);
+
+        console.log("경매 종료 완료:", response);
+
+        // 필요하면 상태 업데이트
+        // 예: 낙찰자 정보 표시 등
+        if (response.auctionStatus === "WON") {
+          alert("축하합니다! 낙찰되었습니다!");
+        } else if (response.auctionStatus === "LOSE") {
+          alert("아쉽게도 낙찰에 실패했습니다.");
+        }
+
+        // 거래 내역 페이지로 이동하거나, 페이지 새로고침
+        // navigate(`/user/${user.id}/transactions`);
+      } catch (error) {
+        console.error("경매 종료 처리 실패:", error);
+        hasClosedRef.current = false; // 실패시 재시도 가능하도록
+      } finally {
+        setIsClosingAuction(false);
+      }
+    };
+
+    handleAuctionClose();
+  }, [auctionStatus, isAuction, post?.id, post?.endTime]);
 
   useEffect(() => {
     const fetchTradeHistory = async () => {
@@ -619,7 +667,9 @@ export default function UserProduct() {
 
           <div className="mb-6">
             <p className="text-sm text-gray-500 mb-1">현재 최고가</p>
-            <p className="text-2xl font-bold text-rebay-blue">{priceFormat(post.price)}원</p>
+            <p className="text-2xl font-bold text-rebay-blue">
+              {priceFormat(post.price)}원
+            </p>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -655,8 +705,6 @@ export default function UserProduct() {
       </div>
     );
   };
-
-
 
   return (
     <MainLayout>
@@ -773,8 +821,9 @@ export default function UserProduct() {
                     <button
                       key={idx}
                       onClick={() => go(idx)}
-                      className={`w-2.5 h-2.5 rounded-full ${current === idx ? "bg-gray-800" : "bg-gray-300"
-                        }`}
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        current === idx ? "bg-gray-800" : "bg-gray-300"
+                      }`}
                       aria-label={`이미지 ${idx + 1}`}
                     />
                   ))}
@@ -823,9 +872,10 @@ export default function UserProduct() {
                       onClick={() => setIsBidModalOpen(true)}
                       disabled={isBidDisabled}
                       className={`inline-flex cursor-pointer items-center justify-center rounded-lg ${statusBgColor} text-white px-7 py-3 text-[15px] shadow hover:shadow-md transition-all font-semibold 
-                        ${isBidDisabled
-                          ? "opacity-50 cursor-not-allowed bg-gray-400"
-                          : "hover:opacity-90"
+                        ${
+                          isBidDisabled
+                            ? "opacity-50 cursor-not-allowed bg-gray-400"
+                            : "hover:opacity-90"
                         }`}
                     >
                       {isBidDisabled ? (

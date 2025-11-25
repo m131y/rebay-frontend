@@ -71,6 +71,13 @@ const postService = {
     await api.delete(`/api/auction/${auctionId}`);
   },
 
+  closeAuction: async (auctionId, endTime) => {
+    const response = await api.post(`/api/auction/${auctionId}/close`, {
+      endTime: endTime, // JSON body로 전송
+    });
+    return response.data;
+  },
+
   toggleAuctionLike: async (auctionId) => {
     const response = await api.post(`/api/auction/${auctionId}/like`);
     return response.data;
@@ -78,7 +85,9 @@ const postService = {
 
   // 입찰하기 함수
   placeBid: async (auctionId, amount) => {
-    const response = await api.post(`/api/auction/${auctionId}/bid`, { amount });
+    const response = await api.post(`/api/auction/${auctionId}/bid`, {
+      amount,
+    });
     return response.data;
   },
 

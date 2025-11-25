@@ -36,10 +36,14 @@ const TransactionDetail = () => {
   const loadTransaction = async () => {
     try {
       const data = await getTransaction(transactionId);
+      console.log("TransactionDetail response:", data);
       setTransaction(data);
       setError(null);
     } catch (error) {
       console.error("거래 조회 실패:", error);
+      console.error("에러 응답:", err.response?.data);
+      console.error("에러 상태:", err.response?.status);
+      console.error("요청 URL:", err.config?.url);
       setError(
         error?.response?.data?.message || "거래 정보를 불러오는데 실패했습니다."
       );
@@ -97,7 +101,28 @@ const TransactionDetail = () => {
     return colorMap[status] || "bg-gray-100 text-gray-800";
   };
 
-  const handlePayment = () => {
+  const handlePayment = async () => {
+    // 경매 결제
+    if (transaction.transactionType === "AUCTION") {
+      try {
+        const res = await preparePayment(
+          transaction.postId,
+          user.id,
+          transaction.amount
+        );
+        console.log("Auction payment created:", res);
+
+        return navigate("/checkout", {
+          state: { transaction: res },
+        });
+      } catch (err) {
+        console.error("경매 결제 준비 실패:", err);
+        alert("경매 결제를 시작할 수 없습니다.");
+        return;
+      }
+    }
+
+    // 일반 결제
     navigate("/checkout", {
       state: { transaction },
     });
@@ -294,6 +319,17 @@ const TransactionDetail = () => {
             <h3 className="font-semibold text-red-800 mb-2">거래 취소</h3>
             <p className="text-sm text-red-700">
               이 거래는 취소되었습니다. 결제 금액은 환불 처리됩니다.
+            </p>
+          </div>
+        )}
+
+        {transaction.status === "EXPIRED" && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+            <h3 className="font-semibold text-red-800 mb-2">거래 만료</h3>
+            <p className="text-sm text-red-700">
+              결제 가능 시간이 지나 거래가 만료되었습니다.
+              {transaction.transactionType === "AUCTION" &&
+                " 경매는 다시 결제할 수 없습니다."}
             </p>
           </div>
         )}
