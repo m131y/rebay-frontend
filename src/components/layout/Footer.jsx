@@ -1,8 +1,9 @@
 import { Link } from "react-router-dom";
 import useAuthStore from "../../store/authStore";
 
-const Footer = () => {
+const Footer = ({ handleClick }) => {
   const { user } = useAuthStore();
+
   return (
     <footer className="w-full bg-white">
       <div className="w-full max-w-full mx-auto px-[60px] relative">
@@ -17,9 +18,13 @@ const Footer = () => {
               <div className="font-presentation text-black text-[12px] font-medium leading-[150%]">
                 상품
               </div>
-              <div className="font-presentation text-[#454545] text-[12px] font-medium leading-[150%] cursor-pointer hover:text-black">
+              <Link
+                to="/sell"
+                onClick={handleClick}
+                className="font-presentation text-[#454545] text-[12px] font-medium leading-[150%] cursor-pointer hover:text-black"
+              >
                 상품 판매하기
-              </div>
+              </Link>
               <div className="font-presentation text-[#454545] text-[12px] font-medium leading-[150%] cursor-pointer hover:text-black">
                 페이지
               </div>
@@ -46,6 +51,7 @@ const Footer = () => {
             <div className="w-[140.25px] flex flex-col gap-[18px] items-end justify-start text-right">
               <Link
                 to={`/user/${user?.id}`}
+                onClick={handleClick}
                 className="font-presentation text-black text-[12px] font-medium leading-[150%]"
               >
                 마이페이지

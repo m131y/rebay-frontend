@@ -5,6 +5,7 @@ import Header from "../components/layout/Header";
 import MainLayout from "../components/layout/MainLayout";
 import Product from "../components/products/product";
 import postService from "../services/post"; // 가정: postService가 쿼리 매개변수를 받는 getAllProducts를 제공한다고 가정
+import { useParams } from "react-router-dom";
 
 const DEFAULT_LARGE_CODE = null;
 
@@ -132,7 +133,52 @@ const PRODUCT_TYPES = {
 
 const PAGE_SIZE = 10;
 
+const findCategoryCodes = (targetCode, hierarchy) => {
+  if (!targetCode) return { lg: null, md: "", sm: "" };
+
+  const targetCodeStr = String(targetCode);
+
+  // 3자리, 2자리, 1자리 코드를 순회하며 찾습니다.
+  for (const lgCode in hierarchy) {
+    if (targetCodeStr === lgCode) {
+      // 대분류 (예: 200, 300)
+      return { lg: lgCode, md: "", sm: "" };
+    }
+
+    const lg = hierarchy[lgCode];
+    for (const mdCode in lg.children) {
+      if (targetCodeStr === mdCode) {
+        // 중분류 (예: 260)
+        return { lg: lgCode, md: mdCode, sm: "" };
+      }
+
+      const md = lg.children[mdCode];
+      for (const smCode in md.children) {
+        if (targetCodeStr === smCode) {
+          // 소분류 (예: 261)
+          return { lg: lgCode, md: mdCode, sm: smCode };
+        }
+      }
+    }
+  }
+
+  // 일치하는 코드를 찾지 못했을 경우
+  return { lg: null, md: "", sm: "" };
+};
+
 const Products = () => {
+  const queryString = window.location.search;
+  const urlParams = new URLSearchParams(queryString);
+  const initialCategory = urlParams.get("category");
+
+  const {
+    lg: initialLgCode,
+    md: initialMdCode,
+    sm: initialSmCode,
+  } = useMemo(() => {
+    return findCategoryCodes(initialCategory, CATEGORY_HIERARCHY);
+  }, [initialCategory]);
+
   const [posts, setPosts] = useState([]);
   const [totalElements, setTotalElements] = useState(0);
   const [totalPages, setTotalPages] = useState(1);
@@ -141,20 +187,19 @@ const Products = () => {
   const [error, setError] = useState(null);
 
   const [selectedType, setSelectedType] = useState(PRODUCT_TYPES.ALL);
-  const [selectedLgCode, setSelectedLgCode] = useState(DEFAULT_LARGE_CODE);
-  const [selectedMdCode, setSelectedMdCode] = useState("");
-  const [selectedSmCode, setSelectedSmCode] = useState("");
+  const [selectedLgCode, setSelectedLgCode] = useState(initialLgCode);
+  const [selectedMdCode, setSelectedMdCode] = useState(initialMdCode);
+  const [selectedSmCode, setSelectedSmCode] = useState(initialSmCode);
   const [sort, setSort] = useState(SORTS.LATEST);
   const [page, setPage] = useState(1);
   const [excludeSold, setExcludeSold] = useState(true);
 
   const [lastFilterState, setLastFilterState] = useState({
-    finalCode: DEFAULT_LARGE_CODE,
+    finalCode: initialCategory ? initialCategory : DEFAULT_LARGE_CODE,
     sort: SORTS.LATEST,
     excludeSold: true,
     selectedType: PRODUCT_TYPES.ALL,
   });
-
   const finalCode = useMemo(
     () => selectedSmCode || selectedMdCode || selectedLgCode,
     [selectedSmCode, selectedMdCode, selectedLgCode]
@@ -266,7 +311,6 @@ const Products = () => {
     };
 
     fetchIntegratedProducts();
-    console.log(finalCode);
   }, [page, finalCode, sort, excludeSold, selectedType]);
   // 페이지 이동 함수
   const goPrev = () => setPage((p) => Math.max(1, p - 1));
@@ -289,7 +333,7 @@ const Products = () => {
                   onClick={() => setSelectedType(PRODUCT_TYPES.ALL)}
                   className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
                     selectedType === PRODUCT_TYPES.ALL
-                      ? "bg-blue-600 text-white"
+                      ? "bg-rebay-blue text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -300,7 +344,7 @@ const Products = () => {
                   onClick={() => setSelectedType(PRODUCT_TYPES.NORMAL)}
                   className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
                     selectedType === PRODUCT_TYPES.NORMAL
-                      ? "bg-blue-500 text-white"
+                      ? "bg-rebay-blue text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -311,7 +355,7 @@ const Products = () => {
                   onClick={() => setSelectedType(PRODUCT_TYPES.AUCTION)}
                   className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
                     selectedType === PRODUCT_TYPES.AUCTION
-                      ? "bg-red-500 text-white"
+                      ? "bg-red-700 text-white"
                       : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                   }`}
                 >
@@ -471,7 +515,7 @@ const Products = () => {
                   onClick={() => setSort(SORTS.LATEST)}
                   className={`px-3 py-1.5 rounded-lg border transition-colors ${
                     sort === SORTS.LATEST
-                      ? "bg-blue-600 text-white border-blue-600"
+                      ? "bg-rebay-blue text-white border-blue-600"
                       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
                 >
@@ -481,7 +525,7 @@ const Products = () => {
                   onClick={() => setSort(SORTS.PRICE_DESC)}
                   className={`px-3 py-1.5 rounded-lg border transition-colors ${
                     sort === SORTS.PRICE_DESC
-                      ? "bg-blue-600 text-white border-blue-600"
+                      ? "bg-rebay-blue text-white border-blue-600"
                       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
                 >
@@ -491,7 +535,7 @@ const Products = () => {
                   onClick={() => setSort(SORTS.PRICE_ASC)}
                   className={`px-3 py-1.5 rounded-lg border transition-colors ${
                     sort === SORTS.PRICE_ASC
-                      ? "bg-blue-600 text-white border-blue-600"
+                      ? "bg-rebay-blue text-white border-blue-600"
                       : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
                   }`}
                 >
@@ -579,7 +623,7 @@ const Products = () => {
                       onClick={() => setPage(n)}
                       className={`w-10 h-10 rounded-full font-bold transition duration-150 ${
                         n === page
-                          ? "bg-blue-600 text-white shadow-lg shadow-blue-300/50"
+                          ? "bg-rebay-blue text-white shadow-lg shadow-blue-300/50"
                           : "text-gray-700 hover:bg-blue-100"
                       }`}
                     >

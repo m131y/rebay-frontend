@@ -35,11 +35,6 @@ const postService = {
     await api.delete(`/api/posts/${postId}`);
   },
 
-  toggleLike: async (postId) => {
-    const response = await api.post(`/api/posts/${postId}/like`);
-    return response.data;
-  },
-
   createAuction: async (auctionData) => {
     const response = await api.post("/api/auction", auctionData);
     return response.data;

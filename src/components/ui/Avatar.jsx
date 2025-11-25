@@ -29,7 +29,7 @@ const Avatar = ({ user, size = "w-10 h-10" }) => {
         navigate(`/user/${user.id}`);
         window.location.reload();
       }}
-      className={`cursor-pointer flex aspect-square items-center justify-center 
+      className={`cursor-pointer w-full h-full flex aspect-square items-center justify-center 
                   shadow-md  overflow-hidden 
                   border border-rebay-gray-300 rounded-full
                   ${size} flex-shrink-0`}

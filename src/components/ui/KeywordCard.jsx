@@ -1,4 +1,17 @@
+import { useNavigate } from "react-router-dom";
+import useAuthStore from "../../store/authStore";
+
 const KeywordCard = ({ key, rank, term }) => {
+  const { user } = useAuthStore();
+  const navigate = useNavigate();
+
+  const handleKeywordClick = () => {
+    if (!user) {
+      return;
+    }
+    navigate(`/search?keyword=${term}&target=TITLE`);
+  };
+
   let rankColorClass = "bg-rebay-gray-300";
   if (rank === 1) {
     rankColorClass = "bg-rebay-blue"; // 1위 강조
@@ -8,7 +21,10 @@ const KeywordCard = ({ key, rank, term }) => {
     rankColorClass = "bg-rebay-blue opacity-60 ";
   }
   return (
-    <div className="cursor-pointer flex-shrink-0 bg-rebay-gray-100 w-[200px] h-[110px] rounded-xl shadow mb-4 hover:scale-[1.02] transition duration-300">
+    <div
+      onClick={handleKeywordClick}
+      className="cursor-pointer flex-shrink-0 bg-rebay-gray-100 w-[200px] h-[110px] rounded-xl shadow mb-4 hover:scale-[1.02] transition duration-300"
+    >
       <div
         className={`size-[30px] ${rankColorClass}  rounded-full mt-3 ml-3 flex justify-center items-center`}
       >

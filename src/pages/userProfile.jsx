@@ -197,10 +197,12 @@ const UserProfile = () => {
       {userProfile && (
         <MainLayout>
           <Header />
-          <main className="w-full flex-grow flex flex-col items-center mt-[70px] py-10">
+          <main className="w-full font-presentation flex-grow flex flex-col items-center mt-[70px] py-10">
             <div className="font-presentation flex justify-between w-[990px]">
               <div className="flex items-center">
-                <Avatar user={userProfile} size="size-[150px]" />
+                <div className="size-[150px]">
+                  <Avatar user={userProfile} size="size-[150px]" />
+                </div>
                 <div className="ml-10 ">
                   <div className="text-2xl">{userProfile.username}</div>
                   <div className="flex">
@@ -293,7 +295,7 @@ const UserProfile = () => {
                     onClick={() => setSelectedType(PRODUCT_TYPES.ALL)}
                     className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
                       selectedType === PRODUCT_TYPES.ALL
-                        ? "bg-blue-600 text-white"
+                        ? "bg-rebay-blue text-white"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
@@ -304,7 +306,7 @@ const UserProfile = () => {
                     onClick={() => setSelectedType(PRODUCT_TYPES.NORMAL)}
                     className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
                       selectedType === PRODUCT_TYPES.NORMAL
-                        ? "bg-blue-500 text-white"
+                        ? "bg-rebay-blue text-white"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
@@ -315,7 +317,7 @@ const UserProfile = () => {
                     onClick={() => setSelectedType(PRODUCT_TYPES.AUCTION)}
                     className={`px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm ${
                       selectedType === PRODUCT_TYPES.AUCTION
-                        ? "bg-red-500 text-white"
+                        ? "bg-red-700 text-white"
                         : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                     }`}
                   >
