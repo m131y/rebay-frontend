@@ -31,8 +31,8 @@ const priceFormat = (v) =>
   v == null
     ? ""
     : new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
-      Number(v)
-    );
+        Number(v)
+      );
 
 // ======================
 // A버전 공통 이미지 키 추출 함수
@@ -235,13 +235,13 @@ export default function UserProduct() {
   const formatAuctionTime = (isoString) => {
     if (!isoString) return "";
     const date = new Date(isoString);
-    const year = date.getFullYear().toString().slice(-2);
+    const year = date.getFullYear().toString();
     const month = (date.getMonth() + 1).toString().padStart(2, "0");
     const day = date.getDate().toString().padStart(2, "0");
     const hour = date.getHours().toString().padStart(2, "0");
     const minute = date.getMinutes().toString().padStart(2, "0");
 
-    return `${year}.${month}.${day}. ${hour}시 ${minute}분`;
+    return `${year}년 ${month}월 ${day}일 ${hour}시 ${minute}분`;
   };
 
   // SSE 연결 및 실시간 가격 업데이트 로직
@@ -274,9 +274,8 @@ export default function UserProduct() {
       setPost((prev) => ({
         ...prev,
         price: data.currentPrice, // 현재가 갱신
-        currentPrice: data.currentPrice
+        currentPrice: data.currentPrice,
       }));
-
     });
 
     return () => {
@@ -284,7 +283,6 @@ export default function UserProduct() {
       console.log("경매 연결 종료");
     };
   }, [isAuction, post?.id, user]);
-
 
   // 입찰 버튼 클릭 핸들러
   const handleBid = async () => {
@@ -321,7 +319,7 @@ export default function UserProduct() {
     }
   };
 
-  // ✅ 상품 상세 + 이미지 presign
+  // 상품 상세 + 이미지 presign
   useEffect(() => {
     if (!productId) return;
 
@@ -584,10 +582,10 @@ export default function UserProduct() {
   if (isAuction) {
     if (auctionStatus === "PENDING") {
       statusText = "경매 대기";
-      statusBgColor = "bg-red-700";
+      statusBgColor = "bg-gray-500";
     } else if (auctionStatus === "ACTIVE") {
       statusText = "경매 진행";
-      statusBgColor = "bg-rebay-green"; // 진행 중
+      statusBgColor = "bg-red-700"; // 진행 중
     } else if (auctionStatus === "ENDED") {
       statusText = "경매 종료";
       statusBgColor = "bg-gray-500"; // 종료
@@ -626,7 +624,9 @@ export default function UserProduct() {
 
           <div className="mb-6">
             <p className="text-sm text-gray-500 mb-1">현재 최고가</p>
-            <p className="text-2xl font-bold text-rebay-blue">{priceFormat(post.price)}원</p>
+            <p className="text-2xl font-bold text-rebay-blue">
+              {priceFormat(post.price)}원
+            </p>
           </div>
 
           <form onSubmit={handleSubmit}>
@@ -662,8 +662,6 @@ export default function UserProduct() {
       </div>
     );
   };
-
-
 
   return (
     <MainLayout>
@@ -798,8 +796,9 @@ export default function UserProduct() {
                     <button
                       key={idx}
                       onClick={() => go(idx)}
-                      className={`w-2.5 h-2.5 rounded-full ${current === idx ? "bg-gray-800" : "bg-gray-300"
-                        }`}
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        current === idx ? "bg-gray-800" : "bg-gray-300"
+                      }`}
                       aria-label={`이미지 ${idx + 1}`}
                     />
                   ))}
@@ -826,18 +825,32 @@ export default function UserProduct() {
                 {isAuction && (
                   <div>
                     {auctionStatus === "ACTIVE" ? (
-                      <div className="pt-2">
-                        <CountdownTimer endTime={post.endTime} />
+                      <div className="flex flex-col space-y-2 ">
+                        <div className="flex justify-center items-center text-2xl shadow font-semibold bg-red-700 rounded-full text-white w-[110px] h-[40px]">
+                          입찰 중
+                        </div>
+                        <div className="pt-2">
+                          <CountdownTimer endTime={post.endTime} />
+                        </div>
                       </div>
                     ) : (
-                      <div className="flex items-center space-x-2 text-lg">
-                        <div className="rounded-xl  px-2 bg-black text-white font-semibold">
-                          {formatAuctionTime(post?.startTime)}
-                        </div>
-                        <div>~</div>
-                        <div className="rounded-xl px-2 bg-black text-white font-semibold">
-                          {formatAuctionTime(post?.endTime)}
-                        </div>
+                      <div>
+                        {auctionStatus === "PENDING" && (
+                          <div className="flex flex-col space-y-4 text-xl">
+                            <div className="flex justify-center items-center text-2xl shadow font-semibold bg-black rounded-full text-white w-[110px] h-[40px]">
+                              진행 예정
+                            </div>
+                            <div className="flex space-x-2">
+                              <div className="rounded-xl px-2 bg-black text-white font-semibold">
+                                {formatAuctionTime(post?.startTime)}
+                              </div>
+                              <div>~</div>
+                              <div className="rounded-xl px-2 bg-black text-white font-semibold">
+                                {formatAuctionTime(post?.endTime)}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>
@@ -856,9 +869,10 @@ export default function UserProduct() {
                       onClick={() => setIsBidModalOpen(true)}
                       disabled={isBidDisabled}
                       className={`inline-flex cursor-pointer items-center justify-center rounded-lg ${statusBgColor} text-white px-7 py-3 text-[15px] shadow hover:shadow-md transition-all font-semibold 
-                        ${isBidDisabled
-                          ? "opacity-50 cursor-not-allowed bg-gray-400"
-                          : "hover:opacity-90"
+                        ${
+                          isBidDisabled
+                            ? "opacity-50 cursor-not-allowed bg-gray-400"
+                            : "hover:opacity-90"
                         }`}
                     >
                       {isBidDisabled ? (

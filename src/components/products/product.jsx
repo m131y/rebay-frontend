@@ -156,7 +156,7 @@ const Product = ({ post, onClick, variant = "default", type }) => {
             </div>
           ) : (
             <div className={`${currentStyle.priceText} mt-1`}>
-              입찰가: {PriceFormat(post.startPrice)}원
+              입찰가: {PriceFormat(post.currentPrice)}원
             </div>
           )}
 
