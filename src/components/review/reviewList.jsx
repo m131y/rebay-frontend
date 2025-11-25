@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import useReviewStore from "../../store/reviewStore";
 import ReviewCard from "./reviewCard";
-import CreateReview from "./createReview";
 import { FiAlignLeft, FiArrowLeft, FiArrowRight } from "react-icons/fi";
 
 const ReviewList = ({ user, variant = "default" }) => {

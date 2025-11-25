@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { FaImage } from "react-icons/fa";
 import api from "../../services/api";
+import useAuthStore from "../../store/authStore";
 
 const PriceFormat = (value) =>
   value == null
@@ -12,12 +13,12 @@ const PriceFormat = (value) =>
       );
 
 const Product = ({ post, onClick, variant = "default", type }) => {
+  const { user } = useAuthStore();
   const navigate = useNavigate();
   const [signedUrl, setSignedUrl] = useState("");
   const [loading, setLoading] = useState(false);
   const isAuction = type === "AUCTION";
 
-  // 🔹 판매 상태 (백엔드 enum: ON_SALE, SOLD)
   const isSold = post?.status === "SOLD";
 
   useEffect(() => {
@@ -55,11 +56,16 @@ const Product = ({ post, onClick, variant = "default", type }) => {
 
   const handleClick = () => {
     if (typeof onClick === "function") return onClick(post);
-    if (post?.id != null) {
+    const finalId = post?.id ?? post?.productId;
+    if (!user) {
+      return;
+    }
+
+    if (finalId != null) {
       if (type === "POST") {
-        navigate(`/products/${post.id}`);
+        navigate(`/products/${finalId}`);
       } else {
-        navigate(`/auctions/${post.id}`);
+        navigate(`/auctions/${finalId}`);
       }
     }
   };
@@ -94,7 +100,7 @@ const Product = ({ post, onClick, variant = "default", type }) => {
                    }`;
 
   return (
-    <div className={currentStyle.wrapper}>
+    <div className={`cursor-pointer ${currentStyle.wrapper}`}>
       <div
         role="button"
         tabIndex={0}
@@ -104,7 +110,7 @@ const Product = ({ post, onClick, variant = "default", type }) => {
         }}
         className={cardType}
       >
-        {/* 🔹 이미지 영역 */}
+        {/* 이미지 영역 */}
         <div
           className={`relative m-3 ${currentStyle.imageHeight} bg-gray-200 rounded-[10px] overflow-hidden flex items-center justify-center`}
         >
@@ -123,7 +129,7 @@ const Product = ({ post, onClick, variant = "default", type }) => {
             />
           )}
 
-          {/* 🔹 판매완료 오버레이 (SOLD일 때만) */}
+          {/* 판매완료 오버레이 (SOLD일 때만) */}
           {isSold && (
             <div className="absolute inset-0 flex items-center justify-center">
               {/* 배경 살짝 어둡게 */}
@@ -136,7 +142,7 @@ const Product = ({ post, onClick, variant = "default", type }) => {
           )}
         </div>
 
-        {/* 🔹 텍스트 영역 */}
+        {/* 텍스트 영역 */}
         <div className="mx-3 mb-3">
           <div className={`${currentStyle.titleText} `}>
             <div className="flex w-full justify-between">
@@ -150,7 +156,7 @@ const Product = ({ post, onClick, variant = "default", type }) => {
             </div>
           ) : (
             <div className={`${currentStyle.priceText} mt-1`}>
-              입찰가: {PriceFormat(post.startPrice)}원
+              입찰가: {PriceFormat(post.currentPrice)}원
             </div>
           )}
 
