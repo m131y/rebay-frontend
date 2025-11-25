@@ -112,7 +112,7 @@ const Product = ({ post, onClick, variant = "default", type }) => {
             <img
               src={signedUrl}
               alt={post?.title || "상품"}
-              className="w-full h-full object-cover group-hover:scale-[1.02] transition-transform"
+              className="w-full h-full  object-cover group-hover:scale-[1.02] transition-transform"
               loading="lazy"
               onError={() => setSignedUrl("")}
             />
@@ -138,11 +138,9 @@ const Product = ({ post, onClick, variant = "default", type }) => {
 
         {/* 🔹 텍스트 영역 */}
         <div className="mx-3 mb-3">
-          <div
-            className={`${currentStyle.titleText} leading-snug line-clamp-1`}
-          >
-            <div className="flex justify-between whitespace-break-spaces ">
-              <div>{post?.title || "제목 없음"}</div>
+          <div className={`${currentStyle.titleText} `}>
+            <div className="flex w-full justify-between">
+              <div className=" truncate">{post?.title || "제목 없음"}</div>
             </div>
           </div>
 

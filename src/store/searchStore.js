@@ -17,7 +17,7 @@ const useSearchStore = create((set) => ({
       const data = await searchService.searchPosts({ keyword, target, page });
 
       set({
-        results: data.content,
+        results: data,
         pageable: data,
         loading: false,
       });

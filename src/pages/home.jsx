@@ -245,11 +245,12 @@ const Home = () => {
                 <div className="w-full h-auto">
                   <div className="grid grid-cols-5 gap-[10px]">
                     {Array.isArray(weeklyTopPosts) &&
-                      weeklyTopPosts.map((post) => (
+                      weeklyTopPosts.map((post, index) => (
                         <Product
-                          key={post.id}
+                          key={index}
                           post={post}
                           onClick={handleProductClick}
+                          type={post.productType}
                           variant="compact"
                         />
                       ))}
@@ -267,11 +268,12 @@ const Home = () => {
                   <div className="w-full h-auto">
                     <div className="grid grid-cols-5 gap-[10px]">
                       {Array.isArray(personalizedRecommendationPosts) &&
-                        personalizedRecommendationPosts.map((post) => (
+                        personalizedRecommendationPosts.map((post, index) => (
                           <Product
-                            key={post.id}
+                            key={index}
                             post={post}
                             variant="compact"
+                            type={post.productType}
                           />
                         ))}
                     </div>
