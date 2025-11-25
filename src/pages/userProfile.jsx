@@ -13,6 +13,7 @@ import useStatisticsStore from "../store/statisticsStore";
 import useFollowStore from "../store/followStore";
 import FollowList from "../components/follow/followList";
 import usePostStore from "../store/postStore";
+import postService from "../services/post";
 
 const UserProfile = () => {
   const { targetUserId } = useParams();
@@ -162,6 +163,32 @@ const UserProfile = () => {
     loadUserPosts();
     console.log(userPosts);
   }, [getUserProducts, tabCounts, targetUserId]);
+
+  useEffect(() => {
+    if (!userPosts || userPosts.length === 0) return;
+
+    const now = new Date().getTime();
+
+    userPosts.forEach(async (post) => {
+      if (post.productType !== "AUCTION") return;
+
+      if (!post.endTime) return;
+
+      const end = new Date(post.endTime).getTime();
+
+      // 아직 판매 상태가 ON_SALE 인 경우만 종료
+      if (end < now && post.saleStatus === "ON_SALE") {
+        try {
+          await postService.closeAuction(post.productId);
+          console.log(`경매 자동 종료 처리 완료: ${post.productId}`);
+
+          await getUserProducts(targetUserId);
+        } catch (err) {
+          console.error("경매 자동 종료 처리 실패:", err);
+        }
+      }
+    });
+  }, [userPosts, getUserProducts, targetUserId]);
 
   const isOwnProfile = userProfile?.id === user?.id;
 
