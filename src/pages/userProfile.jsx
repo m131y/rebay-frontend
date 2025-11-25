@@ -173,7 +173,9 @@ const UserProfile = () => {
           <main className="w-full font-presentation flex-grow flex flex-col items-center mt-[70px] py-10">
             <div className="font-presentation flex justify-between w-[990px]">
               <div className="flex items-center">
-                <Avatar user={userProfile} size="size-[150px]" />
+                <div className="size-[150px]">
+                  <Avatar user={userProfile} size="size-[150px]" />
+                </div>
                 <div className="ml-10 ">
                   <div className="text-2xl">{userProfile.username}</div>
                   <div className="flex">

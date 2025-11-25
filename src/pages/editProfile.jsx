@@ -115,8 +115,9 @@ const EditProfile = () => {
                       >
                         <FiPlus size={30} />
                       </button>
-                      <div className="absolute size-[300px]"></div>
-                      <Avatar user={avatarUser} size="size-[300px]" />
+                      <div className="absolute size-[260px]">
+                        <Avatar user={avatarUser} size="size-[260px]" />
+                      </div>
                     </>
                   )}
                 </div>
@@ -211,7 +212,7 @@ const EditProfile = () => {
                     <div className="w-[450px]"></div>
                     <div
                       onClick={() => setShowUpdatePassword(true)}
-                      className="flex cursor-pointer items-center justify-center border border-gray-400 w-[200px] rounded-full"
+                      className="flex cursor-pointer tetx-xs items-center justify-center border border-gray-400 w-[150px] rounded-full"
                     >
                       비밀번호 변경
                     </div>
@@ -236,7 +237,7 @@ const EditProfile = () => {
                 <button
                   type="submit"
                   className={`
-                        cursor-pointer bg-rebay-blue hover:bg-blue-700 text-white text-xl font-bold 
+                        cursor-pointer bg-rebay-blue hover:opacity-90 text-white text-xl font-bold 
                         rounded-full w-40 h-12 flex items-center justify-center shadow-lg transition-all 
                         ${isSaving ? "opacity-70 cursor-not-allowed" : ""}
                     `}

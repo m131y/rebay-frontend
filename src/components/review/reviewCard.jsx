@@ -66,7 +66,9 @@ const ReviewCard = ({ review, variant }) => {
     return (
       <div className="flex items-center mt-5 w-full ">
         <div className="font-presentation text-xl flex h-[150px] w-[990px] border-b-1 border-gray-400">
-          <Avatar size="size-30" user={review.reviewer} />
+          <div className="size-30">
+            <Avatar size="size-30" user={review.reviewer} />
+          </div>
           <div className="w-full flex justify-between px-4">
             <div className="">
               <div className="text-2xl text-gray-900">
@@ -128,7 +130,9 @@ const ReviewCard = ({ review, variant }) => {
     return (
       <div className="flex items-center mt-5 w-full ">
         <div className="font-presentation flex h-[35px] w-full border-gray-400">
-          <Avatar user={review.reviewer} />
+          <div className="w-[35px]">
+            <Avatar user={review.reviewer} />
+          </div>
           <div className="w-full flex justify-between px-2">
             <div className="w-full leading-0.5">
               <div className="flex justify-between">

@@ -158,6 +158,7 @@ const Header = () => {
             </Link>
             <Link
               to="/products"
+              reloadDocument
               className="font-presentation text-black text-[15px] font-medium cursor-pointer hover:text-gray-600"
             >
               상품보기
