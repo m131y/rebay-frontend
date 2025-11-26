@@ -174,7 +174,7 @@ const TransactionDetail = () => {
 
               <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="px-6 py-3 bg-rebay-blue text-white rounded-lg hover:opacity-90"
               >
                 다시 시도
               </button>
@@ -234,7 +234,7 @@ const TransactionDetail = () => {
           <div className="border-t pt-6 space-y-4">
             <div className="flex justify-between">
               <span className="text-gray-600">결제 금액</span>
-              <span className="text-xl font-bold text-blue-600">
+              <span className="text-xl font-bold text-rebay-blue">
                 {transaction.amount?.toLocaleString()}원
               </span>
             </div>
@@ -296,11 +296,11 @@ const TransactionDetail = () => {
             <h3 className="font-semibold text-blue-800 mb-2">
               💰 에스크로 안내
             </h3>
-            <p className="text-m text-blue-700 mb-2">
+            <p className="text-m text-rebay-blue mb-2">
               결제 금액은 현재 에스크로에 안전하게 예치되어 있습니다.
             </p>
             {canConfirmReceipt && (
-              <p className="text-m text-blue-700 font-semibold">
+              <p className="text-m text-rebay-blue font-semibold">
                 ⚠️ 상품을 받으신 후 아래 "상품 수령 확인" 버튼을 눌러주세요.
               </p>
             )}

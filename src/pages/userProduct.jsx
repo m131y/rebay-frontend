@@ -17,7 +17,7 @@ import TradeChart from "../components/ui/TradeChart";
 import { Chart as ChartJS } from "chart.js";
 
 import { chatApi } from "../services/chat";
-import CountdownTimer from "../components/ui/countdownTimer";
+import CountdownTimer from "../components/ui/CountdownTimer";
 import likeService from "../services/like";
 
 import { EventSourcePolyfill } from "event-source-polyfill";

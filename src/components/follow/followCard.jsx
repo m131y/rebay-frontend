@@ -20,7 +20,9 @@ const FollowCard = ({ user, onFollowToggleSuccess }) => {
   return (
     <div className="flex items-center mt-5 w-full ">
       <div className="font-presentation text-xl flex h-[150px] w-[990px] border-b-1 border-rebay-gray-200">
-        <Avatar size="size-30" user={user} />
+        <div className="size-30">
+          <Avatar size="size-30" user={user} />
+        </div>
         <div className="w-full flex justify-between px-4 text-rebay-gray-700">
           <div className="">
             <div className="text-2xl">{user.username}</div>

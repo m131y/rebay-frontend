@@ -328,7 +328,7 @@ const UserTransactions = () => {
       );
     }
     return (
-      <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-blue-500 text-white">
+      <span className="inline-flex items-center px-2 py-1 rounded-md text-xs font-bold bg-rebay-blue text-white">
         💰 중고거래
       </span>
     );
@@ -341,7 +341,7 @@ const UserTransactions = () => {
     return (
       <div
         key={t.id}
-        className="bg-white border rounded-lg p-6 hover:shadow-lg transition-shadow w-full mb-4 cursor-pointer"
+        className="font-presentation bg-white border border-rebay-gray-400 rounded-lg p-6 hover:shadow-lg transition-shadow w-full mb-4 cursor-pointer"
         onClick={() => handleCardClick(t)}
       >
         {/* 상품 정보 */}
@@ -364,7 +364,7 @@ const UserTransactions = () => {
           </div>
 
           <div className="text-right">
-            <p className="text-2xl font-bold text-blue-600 mb-2">
+            <p className="text-2xl font-bold text-rebay-blue mb-2">
               {t.amount.toLocaleString()}원
             </p>
             <span
@@ -377,7 +377,7 @@ const UserTransactions = () => {
           </div>
         </div>
 
-        <div className="border-t pt-4 flex justify-between items-center">
+        <div className="border-t border-rebay-gray-400 pt-4 flex justify-between items-center">
           <div className="text-sm text-gray-600">
             <p>주문 일시: {new Date(t.createdAt).toLocaleString()}</p>
 
@@ -388,7 +388,7 @@ const UserTransactions = () => {
             )}
 
             {t.status === "PAID" && !isBuyerTab && (
-              <p className="text-blue-600 mt-1">
+              <p className="text-rebay-blue mt-1">
                 결제 완료! 구매자가 상품 수령 확인 시 정산됩니다.
               </p>
             )}
@@ -423,11 +423,14 @@ const UserTransactions = () => {
     <MainLayout>
       <Header />
 
-      <main className="w-full flex-grow flex flex-col items-center mt-[70px] py-10">
+      <main className="font-presentation w-full flex-grow flex flex-col items-center mt-[70px] py-10">
         {/* 제목 */}
         <div className="w-[990px] flex justify-between">
           <h1 className="text-3xl font-bold">거래 내역</h1>
-          <button onClick={() => navigate(-1)} className="text-gray-500">
+          <button
+            onClick={() => navigate(-1)}
+            className="cursor-pointer text-gray-500"
+          >
             뒤로가기
           </button>
         </div>
@@ -463,7 +466,7 @@ const UserTransactions = () => {
         {activeTab === "seller" && sellerInfo && (
           <div className="w-[990px] mb-10 space-y-6">
             {/* 판매자 정보 */}
-            <div className="bg-white border rounded-lg shadow-sm p-6">
+            <div className="bg-white border border-rebay-gray-400 rounded-lg shadow-sm p-6">
               <div className="flex justify-between items-center">
                 <div>
                   <h2 className="text-xl font-bold mb-2">판매자 정보</h2>
@@ -471,7 +474,7 @@ const UserTransactions = () => {
                 </div>
                 <div className="text-right">
                   <p className="text-gray-500 text-sm">총 수익</p>
-                  <p className="text-2xl font-bold text-blue-600">
+                  <p className="text-2xl font-bold text-rebay-blue">
                     {stats.totalEarnings.toLocaleString()}원
                   </p>
                 </div>
@@ -479,7 +482,7 @@ const UserTransactions = () => {
             </div>
 
             {/* 판매 통계 */}
-            <div className="bg-white border rounded-lg shadow-sm p-6">
+            <div className="bg-white border border-rebay-gray-400 rounded-lg shadow-sm p-6">
               <h2 className="text-xl font-bold mb-4">판매 통계</h2>
 
               <div className="grid grid-cols-3 gap-6 text-center">
@@ -513,7 +516,7 @@ const UserTransactions = () => {
               onClick={() => setBuyerFilter(TRADE_TYPES.ALL)}
               className={`px-4 py-2 rounded-full text-sm font-semibold ${
                 buyerFilter === TRADE_TYPES.ALL
-                  ? "bg-blue-600 text-white"
+                  ? "bg-rebay-blue text-white"
                   : "bg-gray-100 text-gray-700"
               }`}
             >
@@ -524,8 +527,8 @@ const UserTransactions = () => {
               onClick={() => setBuyerFilter(TRADE_TYPES.NORMAL)}
               className={`px-4 py-2 rounded-full text-sm font-semibold ${
                 buyerFilter === TRADE_TYPES.NORMAL
-                  ? "bg-blue-500 text-white"
-                  : "bg-blue-100 text-blue-700"
+                  ? "bg-rebay-blue text-white"
+                  : "bg-blue-100 text-rebay-blue"
               }`}
             >
               중고거래
@@ -551,7 +554,7 @@ const UserTransactions = () => {
               onClick={() => setSellerFilter(TRADE_TYPES.ALL)}
               className={`px-4 py-2 rounded-full text-sm font-semibold ${
                 sellerFilter === TRADE_TYPES.ALL
-                  ? "bg-blue-600 text-white"
+                  ? "bg-rebay-blue text-white"
                   : "bg-gray-100 text-gray-700"
               }`}
             >
@@ -562,8 +565,8 @@ const UserTransactions = () => {
               onClick={() => setSellerFilter(TRADE_TYPES.NORMAL)}
               className={`px-4 py-2 rounded-full text-sm font-semibold ${
                 sellerFilter === TRADE_TYPES.NORMAL
-                  ? "bg-blue-500 text-white"
-                  : "bg-blue-100 text-blue-700"
+                  ? "bg-rebay-blue text-white"
+                  : "bg-blue-100 text-rebay-blue"
               }`}
             >
               중고거래
@@ -597,7 +600,7 @@ const UserTransactions = () => {
               </p>
               <button
                 onClick={() => navigate("/")}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg"
+                className="cursor-pointer px-6 py-3 bg-rebay-blue text-white rounded-lg"
               >
                 홈으로
               </button>
@@ -643,10 +646,10 @@ const UserTransactions = () => {
                 activeTab === "buyer"
                   ? buyerTransactions.number === 0
                     ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-rebay-blue text-white hover:opacity-90"
                   : sellerTransactions.number === 0
                   ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
+                  : "bg-rebay-blue text-white hover:opacity-90"
               }`}
             >
               이전
@@ -678,11 +681,11 @@ const UserTransactions = () => {
                 activeTab === "buyer"
                   ? buyerTransactions.number + 1 >= buyerTransactions.totalPages
                     ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                    : "bg-blue-600 text-white hover:bg-blue-700"
+                    : "bg-rebay-blue text-white hover:opacity-90"
                   : sellerTransactions.number + 1 >=
                     sellerTransactions.totalPages
                   ? "bg-gray-300 text-gray-600 cursor-not-allowed"
-                  : "bg-blue-600 text-white hover:bg-blue-700"
+                  : "bg-rebay-blue text-white hover:opacity-90"
               }`}
             >
               다음
