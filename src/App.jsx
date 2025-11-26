@@ -43,9 +43,11 @@ const App = () => {
         <Route path="/user/:targetUserId/edit" element={<EditProfile />} />
         <Route path="/products" element={<Products />} />
         <Route path="/sell" element={<ProductCreate />} />
-        <Route path="/products/:postId/edit" element={<ProductCreate />} />
+        <Route path="/products/:productId/edit" element={<ProductCreate />} />
         <Route path="/createreview" element={<CreateReview />} />
-        <Route path="/products/:postId" element={<UserProduct />} />
+        <Route path="/products/:productId" element={<UserProduct />} />
+        <Route path="/auctions/:productId" element={<UserProduct />} />
+        <Route path="/auctions/:productId/edit" element={<ProductCreate />} />
         <Route path="/search" element={<Search />} />
         <Route path="/checkout" element={<Checkout />} />
         <Route path="/payment/success" element={<PaymentSuccess />} />

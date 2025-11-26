@@ -15,6 +15,7 @@ const useUserStore = create((set) => ({
         userProfile,
         loading: false,
       });
+      console.log(userProfile);
     } catch (err) {
       set({
         error: err.response?.data.message || "Failed to get userprofile",

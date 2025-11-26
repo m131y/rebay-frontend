@@ -1,4 +1,3 @@
-// ✅ src/pages/userProduct.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import api from "../services/api";
@@ -11,7 +10,6 @@ import Header from "../components/layout/Header";
 import Footer from "../components/layout/Footer";
 import useStatisticsStore from "../store/statisticsStore";
 import useAuthStore from "../store/authStore";
-import useReviewStore from "../store/reviewStore";
 import ReviewList from "../components/review/reviewList";
 import useFollowStore from "../store/followStore";
 import { preparePayment } from "../services/payment";
@@ -19,6 +17,11 @@ import TradeChart from "../components/ui/TradeChart";
 import { Chart as ChartJS } from "chart.js";
 
 import { chatApi } from "../services/chat";
+import CountdownTimer from "../components/ui/CountdownTimer";
+import likeService from "../services/like";
+
+import { EventSourcePolyfill } from "event-source-polyfill";
+import StorageService from "../services/storage";
 
 ChartJS.defaults.font.family = "Presentation";
 ChartJS.defaults.font.size = 11;
@@ -30,6 +33,48 @@ const priceFormat = (v) =>
     : new Intl.NumberFormat(undefined, { maximumFractionDigits: 0 }).format(
         Number(v)
       );
+
+// ======================
+// A버전 공통 이미지 키 추출 함수
+// (ProductCreate에서 쓰던 컨셉이랑 동일하게 여러 필드 지원)
+// ======================
+function extractImageKeys(post) {
+  if (!post) return [];
+
+  // 1) 여러 장 배열 형태 우선 확인
+  const candidates = [
+    post.imageUrls,
+    post.images,
+    post.imageList,
+    post.photos,
+    post.files,
+    post.attachments,
+    post.postImages,
+    post.imageKeys,
+  ].filter(Boolean);
+
+  for (const cand of candidates) {
+    if (Array.isArray(cand) && cand.length > 0) {
+      const arr = cand
+        .map((it) => {
+          if (typeof it === "string") return it;
+          if (!it || typeof it !== "object") return null;
+          return (
+            it.imageUrl || it.url || it.key || it.path || it.fileKey || null
+          );
+        })
+        .filter((s) => typeof s === "string" && s.trim());
+      if (arr.length) return arr;
+    }
+  }
+
+  // 2) 단일 이미지 필드
+  if (typeof post.imageUrl === "string" && post.imageUrl.trim()) {
+    return [post.imageUrl.trim()];
+  }
+
+  return [];
+}
 
 const CATEGORY_HIERARCHY = {
   200: {
@@ -154,8 +199,11 @@ const timeAgo = (isoStr) => {
 };
 
 export default function UserProduct() {
-  const { postId } = useParams();
+  const { productId } = useParams();
+  const isAuction = window.location.pathname.startsWith("/auctions/");
   const navigate = useNavigate();
+
+  const [isSold, setIsSold] = useState();
 
   const { user } = useAuthStore();
   const { getStatisticsByUserProfile, getTradeHistory } = useStatisticsStore();
@@ -163,11 +211,17 @@ export default function UserProduct() {
 
   const [isfollowing, setIsFollowing] = useState(null);
   const [post, setPost] = useState(null);
-  const [imgUrl, setImgUrl] = useState(null);
+
+  const [images, setImages] = useState([]); // presign된 이미지 URL 배열
+  const [current, setCurrent] = useState(0); // 대표 인덱스
+
   const [loading, setLoading] = useState(true);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [tradeHistoryList, setTradeHistoryList] = useState([]);
+
+  const [isClosingAuction, setIsClosingAuction] = useState(false);
+  const hasClosedRef = useRef(false); // 중복 호출 방지
 
   const fetchedRef = useRef(false);
 
@@ -178,35 +232,146 @@ export default function UserProduct() {
     following: 0,
   });
 
+  const [isBidModalOpen, setIsBidModalOpen] = useState(false);
+  const [bidInput, setBidInput] = useState("");
+
+  const formatAuctionTime = (isoString) => {
+    if (!isoString) return "";
+    const date = new Date(isoString);
+    const year = date.getFullYear().toString();
+    const month = (date.getMonth() + 1).toString().padStart(2, "0");
+    const day = date.getDate().toString().padStart(2, "0");
+    const hour = date.getHours().toString().padStart(2, "0");
+    const minute = date.getMinutes().toString().padStart(2, "0");
+
+    return `${year}년 ${month}월 ${day}일 ${hour}시 ${minute}분`;
+  };
+
+  // SSE 연결 및 실시간 가격 업데이트 로직
   useEffect(() => {
+    // 경매가 아니거나, 로그인이 안 되어 있거나, post 정보가 없으면 스킵
+    if (!isAuction || !post?.id || !user) return;
+
+    const token = StorageService.getAccessToken();
+    const baseURL = import.meta.env.VITE_API_URL || "http://localhost:8080";
+
+    // SSE 연결 생성 (헤더에 토큰 포함)
+    const eventSource = new EventSourcePolyfill(
+      `${baseURL}/api/auction/${post.id}/stream`,
+      {
+        headers: { Authorization: `Bearer ${token}` },
+        heartbeatTimeout: 86400000,
+      }
+    );
+
+    eventSource.onopen = () => {
+      console.log("경매 실시간 연결 성공");
+    };
+
+    // 서버에서 "BID_UPDATE" 이벤트를 보내면 처리
+    eventSource.addEventListener("BID_UPDATE", (e) => {
+      const data = JSON.parse(e.data);
+      console.log("실시간 입찰 정보 수신:", data);
+
+      // 화면의 가격 정보를 실시간으로 업데이트
+      setPost((prev) => ({
+        ...prev,
+        price: data.currentPrice, // 현재가 갱신
+        currentPrice: data.currentPrice,
+      }));
+    });
+
+    return () => {
+      eventSource.close(); // 페이지 나가면 연결 종료
+      console.log("경매 연결 종료");
+    };
+  }, [isAuction, post?.id, user]);
+
+  // 입찰 버튼 클릭 핸들러
+  const handleBid = async () => {
+    if (!user) {
+      alert("로그인이 필요합니다.");
+      navigate("/login");
+      return;
+    }
+
+    const inputPrice = window.prompt(
+      `현재가: ${priceFormat(post.price)}원\n얼마를 입찰하시겠습니까?`,
+      post.price + 1000 // 기본값: 현재가 + 1000원
+    );
+
+    if (!inputPrice) return; // 취소
+
+    const bidAmount = Number(inputPrice);
+    if (isNaN(bidAmount)) {
+      alert("숫자만 입력해주세요.");
+      return;
+    }
+
+    if (bidAmount <= post.price) {
+      alert("현재가보다 높은 금액을 입력해야 합니다.");
+      return;
+    }
+
+    try {
+      await postService.placeBid(post.id, bidAmount);
+      alert("입찰에 성공했습니다!");
+    } catch (err) {
+      console.error(err);
+      alert(err.response?.data?.message || "입찰에 실패했습니다.");
+    }
+  };
+
+  // 상품 상세 + 이미지 presign
+  useEffect(() => {
+    if (!productId) return;
+
     const fetchPost = async () => {
       try {
-        setLoading(true);
-        const res = await api.get(`/api/posts/${postId}`); // ✅ 항상 조회수 +1
-        const data = res.data;
-
-        if (!data) {
-          setPost(null);
-          setLoading(false);
-          return;
-        }
-
-        setPost(data);
-        if (data.imageUrl) {
-          const imgRes = await api.get(
-            `/api/upload/post/image?url=${encodeURIComponent(data.imageUrl)}`
-          );
-          setImgUrl(imgRes?.data?.imageUrl || data.imageUrl);
+        let response;
+        if (isAuction) {
+          response = await postService.getAuction(productId);
         } else {
-          setImgUrl(null);
+          response = await postService.getPost(productId);
         }
-        const rawLiked = localStorage.getItem(`liked:${postId}`);
-        const rawCount = localStorage.getItem(`likeCount:${postId}`);
-        setLiked(rawLiked ? JSON.parse(rawLiked) : false);
-        setLikeCount(rawCount ? Number(rawCount) : 0);
+
+        setPost(response);
+        setIsSold(response?.status === "SOLD");
+
+        // ⭐ 여러 장 이미지 키 추출 → presign URL 변환
+        const keys = extractImageKeys(response);
+
+        if (keys.length > 0) {
+          try {
+            const urls = await Promise.all(
+              keys.map(async (k) => {
+                try {
+                  const imgRes = await api.get(
+                    `/api/upload/post/image?url=${encodeURIComponent(k)}`
+                  );
+                  return imgRes?.data?.imageUrl || k;
+                } catch {
+                  return k; // presign 실패 시 원본 key 그대로
+                }
+              })
+            );
+            setImages(urls);
+            setCurrent(0);
+          } catch {
+            setImages(keys);
+            setCurrent(0);
+          }
+        } else {
+          setImages([]);
+        }
+
+        console.log(response);
+        setLiked(response.liked);
+        setLikeCount(response.likeCount);
       } catch (err) {
         console.error("❌ 상품 조회 실패:", err);
         setPost(null);
+        setImages([]);
       } finally {
         setLoading(false);
       }
@@ -217,37 +382,44 @@ export default function UserProduct() {
       fetchedRef.current = true;
       fetchPost();
     }
-  }, [postId]);
+  }, [productId, isAuction]);
 
+  // 판매자 정보
   useEffect(() => {
     const fetchSeller = async () => {
       try {
-        setTabCounts(await getStatisticsByUserProfile(post?.user?.id));
-        setIsFollowing(post?.user?.following);
+        setTabCounts(await getStatisticsByUserProfile(post?.seller?.id));
+        setIsFollowing(post?.seller?.following);
       } catch (err) {
         console.error("❌ 유저 조회 실패:", err);
       }
     };
 
-    fetchSeller();
-  }, [post]);
+    if (post?.seller?.id) fetchSeller();
+  }, [post?.seller?.id, post?.seller?.following, getStatisticsByUserProfile]);
 
   const handleToggleFollow = async () => {
-    await toggleFollow(post?.user?.id);
-    setTabCounts(await getStatisticsByUserProfile(post?.user?.id));
+    await toggleFollow(post?.seller?.id);
+    setTabCounts(await getStatisticsByUserProfile(post?.seller?.id));
     setIsFollowing(!isfollowing);
   };
 
-  const isOwnProduct = post?.user?.id === user?.id;
+  const isOwnProduct = post?.seller?.id === user?.id;
 
   const onToggleLike = async () => {
     if (!post?.id) return;
     try {
-      const { isLiked, likeCount } = await postService.toggleLike(post.id);
-      setLiked(isLiked);
-      setLikeCount(likeCount);
-      localStorage.setItem(`liked:${postId}`, JSON.stringify(isLiked));
-      localStorage.setItem(`likeCount:${post.id}`, String(likeCount)); // ✅ 추가
+      if (isAuction) {
+        const { isLiked, likeCount } = await likeService.toggleAuctionLike(
+          post.id
+        );
+        setLiked(isLiked);
+        setLikeCount(likeCount);
+      } else {
+        const { isLiked, likeCount } = await likeService.toggleLike(post.id);
+        setLiked(isLiked);
+        setLikeCount(likeCount);
+      }
     } catch (e) {
       console.error("좋아요 실패:", e);
     }
@@ -260,14 +432,14 @@ export default function UserProduct() {
       navigate("/login");
       return;
     }
-    if (user.id === post.user.id) {
+    if (user.id === post.seller.id) {
       alert("자신의 상품과는 채팅할 수 없습니다.");
       return;
     }
 
     try {
       // 채팅방 생성/조회 요청
-      const res = await chatApi.createOrGetRoom(post.user.id);
+      const res = await chatApi.createOrGetRoom(post.seller.id);
       const roomId = res.data;
 
       // 채팅방으로 이동
@@ -291,6 +463,27 @@ export default function UserProduct() {
       alert("결제 준비에 실패했습니다.");
     }
   };
+
+  const auctionStatus = useMemo(() => {
+    if (!isAuction || !post?.startTime || !post?.endTime) return null;
+
+    const now = new Date().getTime();
+    const start = new Date(post.startTime).getTime();
+    const end = new Date(post.endTime).getTime();
+
+    if (now < start) {
+      return "PENDING"; // 경매 대기
+    } else if (now >= start && now <= end) {
+      return "ACTIVE"; // 경매 진행
+    } else {
+      return "ENDED"; // 경매 종료
+    }
+  }, [isAuction, post?.startTime, post?.endTime]);
+
+  const isBidDisabled =
+    auctionStatus === "PENDING" ||
+    auctionStatus === "ENDED" ||
+    isClosingAuction; // 종료 처리 중에도 비활성화
 
   const findCategoryName = (code) => {
     if (!code) {
@@ -342,6 +535,51 @@ export default function UserProduct() {
   );
 
   useEffect(() => {
+    // 경매가 아니거나, 종료 상태가 아니면 스킵
+    if (!isAuction || auctionStatus !== "ENDED") {
+      return;
+    }
+
+    // 이미 처리했으면 스킵
+    if (hasClosedRef.current || isClosingAuction) {
+      return;
+    }
+
+    // 경매 종료 API 호출
+    const handleAuctionClose = async () => {
+      try {
+        setIsClosingAuction(true);
+        hasClosedRef.current = true;
+
+        console.log("경매 종료 처리 시작:", post.id);
+
+        // closeAuction API 호출 (endTime 전달)
+        const response = await postService.closeAuction(post.id, post.endTime);
+
+        console.log("경매 종료 완료:", response);
+
+        // 필요하면 상태 업데이트
+        // 예: 낙찰자 정보 표시 등
+        if (response.auctionStatus === "WON") {
+          alert("축하합니다! 낙찰되었습니다!");
+        } else if (response.auctionStatus === "LOSE") {
+          alert("아쉽게도 낙찰에 실패했습니다.");
+        }
+
+        // 거래 내역 페이지로 이동하거나, 페이지 새로고침
+        // navigate(`/user/${user.id}/transactions`);
+      } catch (error) {
+        console.error("경매 종료 처리 실패:", error);
+        hasClosedRef.current = false; // 실패시 재시도 가능하도록
+      } finally {
+        setIsClosingAuction(false);
+      }
+    };
+
+    handleAuctionClose();
+  }, [auctionStatus, isAuction, post?.id, post?.endTime]);
+
+  useEffect(() => {
     const fetchTradeHistory = async () => {
       if (!post?.categoryCode) {
         return;
@@ -359,6 +597,14 @@ export default function UserProduct() {
 
     fetchTradeHistory();
   }, [post?.categoryCode, getTradeHistory]);
+
+  const prev = () =>
+    setCurrent((i) =>
+      images.length ? (i - 1 + images.length) % images.length : 0
+    );
+  const next = () =>
+    setCurrent((i) => (images.length ? (i + 1) % images.length : 0));
+  const go = (idx) => setCurrent(idx);
 
   if (loading)
     return (
@@ -380,10 +626,98 @@ export default function UserProduct() {
       </div>
     );
 
+  let statusText = "일반 상품";
+  let statusBgColor = "bg-gray-400"; // 일반 상품 기본 색상 (예시)
+
+  if (isAuction) {
+    if (auctionStatus === "PENDING") {
+      statusText = "경매 대기";
+      statusBgColor = "bg-gray-500";
+    } else if (auctionStatus === "ACTIVE") {
+      statusText = "경매 진행";
+      statusBgColor = "bg-red-700"; // 진행 중
+    } else if (auctionStatus === "ENDED") {
+      statusText = "경매 종료";
+      statusBgColor = "bg-gray-500"; // 종료
+    }
+  }
+
+  // 모달 컴포넌트
+  const BidModal = () => {
+    if (!isBidModalOpen) return null;
+    const handleSubmit = async (e) => {
+      e.preventDefault();
+      const amount = Number(bidInput);
+
+      if (isNaN(amount) || amount <= post.price) {
+        alert("현재가보다 높은 금액을 입력해주세요.");
+        return;
+      }
+
+      try {
+        // 기존 handleBid 로직 호출 (API 전송)
+        await postService.placeBid(post.id, amount);
+
+        // 성공 시 처리
+        alert("입찰 성공!");
+        setIsBidModalOpen(false);
+        setBidInput("");
+      } catch (err) {
+        alert(err.response?.data?.message || "입찰 실패");
+      }
+    };
+
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+        <div className="bg-white w-[400px] rounded-2xl shadow-2xl p-6 font-presentation animate-fadeIn">
+          <h3 className="text-xl font-bold mb-4 text-gray-800">입찰하기</h3>
+
+          <div className="mb-6">
+            <p className="text-sm text-gray-500 mb-1">현재 최고가</p>
+            <p className="text-2xl font-bold text-rebay-blue">
+              {priceFormat(post.currentPrice)}원
+            </p>
+          </div>
+
+          <form onSubmit={handleSubmit}>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              입찰하실 금액을 입력하세요
+            </label>
+            <input
+              type="number"
+              value={bidInput}
+              onChange={(e) => setBidInput(e.target.value)}
+              placeholder={post.currentPrice + 1000}
+              className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-rebay-blue focus:ring-2 focus:ring-blue-100 outline-none transition-all text-lg font-bold mb-6"
+              autoFocus
+            />
+
+            <div className="flex gap-3">
+              <button
+                type="button"
+                onClick={() => setIsBidModalOpen(false)}
+                className="flex-1 py-3 rounded-xl border border-gray-300 text-gray-600 font-bold hover:bg-gray-50 transition"
+              >
+                취소
+              </button>
+              <button
+                type="submit"
+                className="flex-1 py-3 rounded-xl bg-rebay-blue text-white font-bold hover:bg-blue-700 shadow-lg transition"
+              >
+                입찰확인
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <MainLayout>
       <Header />
       <div className="max-w-[1100px] mx-auto px-4 py-6 font-presentation">
+        {/* 상단 버튼 줄 */}
         <div className="mb-4 flex items-center justify-between">
           <button
             onClick={() => navigate(-1)}
@@ -395,7 +729,22 @@ export default function UserProduct() {
           {isOwnProduct && (
             <div className="pt-1 flex gap-2">
               <button
-                onClick={() => navigate(`/products/${post.id}/edit`)}
+                onClick={() => {
+                  if (isAuction) {
+                    if (
+                      auctionStatus === "ENDED" ||
+                      auctionStatus === "ACTIVE"
+                    ) {
+                      alert(
+                        "경매가 진행중 이거나 종료된 상품은 수정할 수 없습니다."
+                      );
+                    } else {
+                      navigate(`/auctions/${post.id}/edit`);
+                    }
+                  } else {
+                    navigate(`/products/${post.id}/edit`);
+                  }
+                }}
                 className="cursor-pointer inline-flex items-center justify-center rounded-lg border border-rebay-gray-400 px-4 py-2 hover:bg-gray-100"
               >
                 수정
@@ -404,8 +753,13 @@ export default function UserProduct() {
                 onClick={async () => {
                   if (!window.confirm("이 상품을 삭제할까요?")) return;
                   try {
-                    await postService.deletePost(post.id);
-                    navigate("/products");
+                    if (isAuction) {
+                      await postService.deleteAuction(post.id);
+                      navigate("/products");
+                    } else {
+                      await postService.deletePost(post.id);
+                      navigate("/products");
+                    }
                   } catch (e) {
                     console.error(e);
                     alert("삭제 실패");
@@ -419,11 +773,11 @@ export default function UserProduct() {
           )}
         </div>
 
-        {/* 상단 */}
+        {/* 상단 영역 */}
         <section className="grid grid-cols-12 gap-8">
-          {/* 이미지 */}
           <div className="col-span-12 md:col-span-6">
             <div className="relative rounded-2xl border border-rebay-gray-400 shadow p-2 bg-gray-50">
+              {/* 좋아요 버튼 */}
               <button
                 onClick={onToggleLike}
                 className="cursor-pointer absolute left-3 top-3 z-10 inline-flex items-center gap-1 rounded-full bg-red-500/40 backdrop-blur px-2.5 py-1.5 text-sm hover:bg-red-500/50"
@@ -439,21 +793,71 @@ export default function UserProduct() {
                 </span>
               </button>
 
-              <div className="w-[420px] h-[420px] rounded-xl overflow-hidden flex items-center justify-center bg-white">
-                {imgUrl ? (
+              {/* 대표 이미지 박스 */}
+              <div className="w-[420px] h-[420px] rounded-xl overflow-hidden flex items-center justify-center bg-white relative mx-auto">
+                {images.length > 0 ? (
                   <img
-                    src={imgUrl || undefined}
+                    src={images[current]}
                     alt={post?.title || "상품 이미지"}
-                    className="max-h-[420px] w-auto object-contain"
+                    className="max-h-[420px] w-auto object-contain select-none"
+                    onError={(e) =>
+                      (e.currentTarget.style.visibility = "hidden")
+                    }
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-100" />
                 )}
+
+                {/* 이전/다음 화살표 */}
+                {images.length > 1 && (
+                  <>
+                    <button
+                      onClick={prev}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow"
+                      aria-label="이전 이미지"
+                    >
+                      ‹
+                    </button>
+                    <button
+                      onClick={next}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full w-8 h-8 flex items-center justify-center shadow"
+                      aria-label="다음 이미지"
+                    >
+                      ›
+                    </button>
+                  </>
+                )}
+                {isSold && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    {/* 배경 살짝 어둡게 */}
+                    <div className="absolute inset-0 bg-black/20" />
+                    {/* 동그란 배지 */}
+                    <div className="relative flex items-center justify-center w-[86px] h-[86px] rounded-full bg-black/60 text-white text-xs font-semibold">
+                      판매완료
+                    </div>
+                  </div>
+                )}
               </div>
+
+              {/* 인디케이터 점 */}
+              {images.length > 1 && (
+                <div className="flex items-center justify-center gap-2 mt-3">
+                  {images.map((_, idx) => (
+                    <button
+                      key={idx}
+                      onClick={() => go(idx)}
+                      className={`w-2.5 h-2.5 rounded-full ${
+                        current === idx ? "bg-gray-800" : "bg-gray-300"
+                      }`}
+                      aria-label={`이미지 ${idx + 1}`}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
-          {/* 정보 */}
+          {/* 정보 영역 */}
           <div className="col-span-12 md:col-span-6">
             <div className="flex flex-col space-y-5">
               {categoryLabel && (
@@ -466,8 +870,43 @@ export default function UserProduct() {
                   {post?.title}
                 </h1>
                 <div className="text-[24px] font-bold">
-                  {post?.price != null ? `${priceFormat(post.price)}원` : ""}
+                  {post?.currentPrice != null
+                    ? `${priceFormat(post.currentPrice)}원`
+                    : ""}
                 </div>
+                {isAuction && (
+                  <div>
+                    {auctionStatus === "ACTIVE" ? (
+                      <div className="flex flex-col space-y-2 ">
+                        <div className="flex justify-center items-center text-2xl shadow font-semibold bg-red-700 rounded-full text-white w-[110px] h-[40px]">
+                          입찰 중
+                        </div>
+                        <div className="pt-2">
+                          <CountdownTimer endTime={post.endTime} />
+                        </div>
+                      </div>
+                    ) : (
+                      <div>
+                        {auctionStatus === "PENDING" && (
+                          <div className="flex flex-col space-y-4 text-xl">
+                            <div className="flex justify-center items-center text-2xl shadow font-semibold bg-black rounded-full text-white w-[110px] h-[40px]">
+                              진행 예정
+                            </div>
+                            <div className="flex space-x-2">
+                              <div className="rounded-xl px-2 bg-black text-white font-semibold">
+                                {formatAuctionTime(post?.startTime)}
+                              </div>
+                              <div>~</div>
+                              <div className="rounded-xl px-2 bg-black text-white font-semibold">
+                                {formatAuctionTime(post?.endTime)}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
               <div className="flex items-center gap-5 text-sm text-gray-500">
                 <span>{timeAgo(post?.createdAt)}</span>
@@ -476,18 +915,37 @@ export default function UserProduct() {
                 </span>
               </div>
               {!isOwnProduct && (
-                <div className="pt-1">
-                  <button
-                    onClick={handlePurchase}
-                    className="cursor-pointer inline-flex items-center justify-center rounded-lg bg-rebay-blue text-white px-7 py-3 text-[15px] shadow hover:shadow-md transition-all font-semibold hover:opacity-90"
-                  >
-                    구매하기
-                  </button>
+                <div className="pt-1 flex gap-3">
+                  {isAuction ? (
+                    <button
+                      onClick={() => setIsBidModalOpen(true)}
+                      disabled={isBidDisabled}
+                      className={`inline-flex cursor-pointer items-center justify-center rounded-lg ${statusBgColor} text-white px-7 py-3 text-[15px] shadow hover:shadow-md transition-all font-semibold 
+                        ${
+                          isBidDisabled
+                            ? "opacity-50 cursor-not-allowed bg-gray-400"
+                            : "hover:opacity-90"
+                        }`}
+                    >
+                      {isBidDisabled ? (
+                        <div>{statusText}</div>
+                      ) : (
+                        <div>입찰하기</div>
+                      )}
+                    </button>
+                  ) : (
+                    <button
+                      onClick={handlePurchase}
+                      className="cursor-pointer inline-flex items-center  justify-center rounded-lg bg-rebay-blue text-white px-7 py-3 text-[15px] shadow hover:shadow-md transition-all font-semibold hover:opacity-90"
+                    >
+                      구매하기
+                    </button>
+                  )}
 
-                  {/* 채팅하기 버튼 추가 */}
+                  {/* 채팅하기 버튼 */}
                   <button
                     onClick={handleStartChat}
-                    className="inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 px-7 py-3 text-[15px] font-semibold hover:bg-gray-50 transition"
+                    className="cursor-pointer inline-flex items-center justify-center rounded-lg border border-gray-300 bg-white text-gray-700 px-7 py-3 text-[15px] font-semibold hover:bg-gray-50 transition"
                   >
                     채팅하기
                   </button>
@@ -510,7 +968,7 @@ export default function UserProduct() {
           </div>
         </section>
 
-        {/* 하단 */}
+        {/* 하단 영역 */}
         <section className="grid grid-cols-12 gap-6 mt-8">
           <div className="col-span-12 md:col-span-6">
             <div className="rounded-2xl border border-rebay-gray-400 p-5 h-full shadow min-h-[240px]">
@@ -526,12 +984,12 @@ export default function UserProduct() {
               <h3 className="text-base font-semibold mb-3">사용자 정보</h3>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <div className="w-14 h-14 rounded-full overflow-hidden">
-                    <Avatar user={post?.user} size="small" />
+                  <div className="w-14 h-14 rounded-full ">
+                    <Avatar user={post?.seller} size="small" />
                   </div>
                   <div className="leading-tight">
                     <div className="font-medium">
-                      {post?.user?.username || "판매자"}
+                      {post?.seller?.username || "판매자"}
                     </div>
                     <div className="text-xs text-gray-500">
                       상품{tabCounts.post} · 팔로워 {tabCounts.follower}
@@ -561,17 +1019,19 @@ export default function UserProduct() {
 
               <div className="mt-5">
                 <div className="text-sm font-medium mb-2">최근 후기</div>
-                <ReviewList user={post?.user} variant="compact" />
+                <ReviewList user={post?.seller} variant="compact" />
               </div>
             </div>
           </div>
         </section>
 
-        {tradeHistoryList.length != 0 && (
+        {tradeHistoryList.length !== 0 && (
           <section className="my-6 p-2 font-presentation w-full h-auto border border-rebay-gray-400 rounded-2xl">
             <TradeChart tradeHistoryList={tradeHistoryList} />
           </section>
         )}
+
+        <BidModal />
       </div>
       <Footer />
     </MainLayout>

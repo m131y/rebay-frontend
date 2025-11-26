@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import useReviewStore from "../../store/reviewStore";
 import ReviewCard from "./reviewCard";
-import CreateReview from "./createReview";
 import { FiAlignLeft, FiArrowLeft, FiArrowRight } from "react-icons/fi";
 
 const ReviewList = ({ user, variant = "default" }) => {
@@ -12,7 +11,6 @@ const ReviewList = ({ user, variant = "default" }) => {
     getSellerReviews,
   } = useReviewStore();
 
-  const [showCreateReview, setShowCreateReview] = useState(false);
   const [reviewType, setReviewType] = useState("SellerReviews");
 
   const handleSelecSellerdReviews = () => {
@@ -46,17 +44,6 @@ const ReviewList = ({ user, variant = "default" }) => {
     <div>
       {variant === "default" && (
         <>
-          <div className="flex justify-between mb-4">
-            <button
-              onClick={() => setShowCreateReview(true)}
-              className="cursor-pointer bg-rebay-blue rounded-md py-[10.5px] px-[22px] flex items-center justify-center shadow-sm hover:opacity-90 transition"
-            >
-              <div className="font-presentation text-white text-[12px] font-medium">
-                후기작성(임시)
-              </div>
-            </button>
-          </div>
-
           <div className="flex font-presentation justify-between mb-6 pb-2">
             <div
               className={`cursor-pointer hover:underline flex items-center ${
@@ -103,12 +90,6 @@ const ReviewList = ({ user, variant = "default" }) => {
           </div>
         )}
       </div>
-
-      {showCreateReview && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <CreateReview onClose={() => setShowCreateReview(false)} />
-        </div>
-      )}
     </div>
   );
 };

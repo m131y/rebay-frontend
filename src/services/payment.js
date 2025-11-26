@@ -5,11 +5,6 @@ export const getClientKey = async () => {
   return response.data;
 };
 
-// export const getAvailableProducts = async () => {
-//   const response = await api.get("/api/posts");
-//   return response.data;
-// };
-
 export const preparePayment = async (postId, buyerId, amount) => {
   const response = await api.post("/api/payments/prepare", {
     postId,
@@ -45,14 +40,16 @@ export const confirmReceipt = async (transactionId, buyerId) => {
   return response.data;
 };
 
-export const getBuyerTransactions = async (buyerId) => {
-  const response = await api.get(`/api/transactions/buyer/${buyerId}`);
+export const getBuyerTransactions = async (buyerId, page = 0, size = 10) => {
+  const response = await api.get(`/api/transactions/buyer/${buyerId}`, {
+    params: { page, size },
+  });
   return response.data;
 };
 
-export const getSellerTransactions = async (sellerId) => {
-  const response = await api.get(`/api/transactions/seller/${sellerId}`);
+export const getSellerTransactions = async (sellerId, page = 0, size = 10) => {
+  const response = await api.get(`/api/transactions/seller/${sellerId}`, {
+    params: { page, size },
+  });
   return response.data;
 };
-
-export default api;

@@ -2,7 +2,7 @@ import Footer from "../components/layout/Footer";
 import Header from "../components/layout/Header";
 import MainLayout from "../components/layout/MainLayout";
 import Product from "../components/products/product";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import ImageSlider from "../components/ui/imageSlider";
 import { useEffect, useRef, useState } from "react";
 import useStatisticsStore from "../store/statisticsStore";
@@ -43,16 +43,10 @@ const Home = () => {
     setShowSignup(false);
   };
 
-  const handleLogout = () => {
-    logout();
-    window.location.reload();
-  };
-
-  const handleProductClick = (post) => {
+  const handleClick = (e) => {
     if (!user) {
+      e.preventDefault();
       setShowLogin(true);
-    } else {
-      navigate(`/products/${post.id}`);
     }
   };
 
@@ -187,6 +181,7 @@ const Home = () => {
                 </div>
               </div>
               <div
+                onClick={handleClick}
                 ref={scrollRef} // useRef로 스크롤 대상 지정
                 className="flex flex-row overflow-x-scroll hide-scrollbar space-x-4 h-auto pb-4"
               >
@@ -211,33 +206,52 @@ const Home = () => {
               </h2>
 
               <div className="w-full h-[120px] flex justify-start space-x-[15px]">
-                <div className="w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center">
+                <Link
+                  to="/products?category=200"
+                  onClick={handleClick}
+                  className="cursor-pointer w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center"
+                >
                   <div className="font-presentation text-black text-[20px] font-medium">
-                    가전/디지털
+                    전자기기
                   </div>
-                </div>
+                </Link>
 
-                <div className="w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center">
+                <Link
+                  to="/products?category=400"
+                  onClick={handleClick}
+                  className="cursor-pointer w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center"
+                >
                   <div className="font-presentation text-black text-[20px] font-medium">
-                    명품/패션
+                    가구/인테리어
                   </div>
-                </div>
+                </Link>
 
-                <div className="w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center">
+                <Link
+                  to="/products?category=800"
+                  onClick={handleClick}
+                  className="cursor-pointer w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center"
+                >
                   <div className="font-presentation text-black text-[20px] font-medium">
-                    취미/수집
+                    의류/잡화
                   </div>
-                </div>
+                </Link>
 
-                <div className="w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center">
+                <Link
+                  to="/products?category=900"
+                  onClick={handleClick}
+                  className="cursor-pointer w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center"
+                >
                   <div className="font-presentation text-black text-[20px] font-medium">
-                    예술품
+                    기타 중고 물품
                   </div>
-                </div>
+                </Link>
               </div>
             </section>
             {weeklyTopPosts && (
-              <section className="w-[690px] h-[550px] flex flex-col items-center justify-start space-y-5 mx-auto">
+              <section
+                onClick={handleClick}
+                className="w-[690px] h-[550px] flex flex-col items-center justify-start space-y-5 mx-auto"
+              >
                 <h2 className="font-presentation text-black text-[30px] font-extrabold text-left self-start">
                   이번 주 인기 상품
                 </h2>
@@ -245,11 +259,11 @@ const Home = () => {
                 <div className="w-full h-auto">
                   <div className="grid grid-cols-5 gap-[10px]">
                     {Array.isArray(weeklyTopPosts) &&
-                      weeklyTopPosts.map((post) => (
+                      weeklyTopPosts.map((post, index) => (
                         <Product
-                          key={post.id}
+                          key={index}
                           post={post}
-                          onClick={handleProductClick}
+                          type={post.productType}
                           variant="compact"
                         />
                       ))}
@@ -267,11 +281,12 @@ const Home = () => {
                   <div className="w-full h-auto">
                     <div className="grid grid-cols-5 gap-[10px]">
                       {Array.isArray(personalizedRecommendationPosts) &&
-                        personalizedRecommendationPosts.map((post) => (
+                        personalizedRecommendationPosts.map((post, index) => (
                           <Product
-                            key={post.id}
+                            key={index}
                             post={post}
                             variant="compact"
+                            type={post.productType}
                           />
                         ))}
                     </div>
@@ -300,7 +315,7 @@ const Home = () => {
           />
         </div>
       )}
-      <Footer />
+      <Footer handleClick={handleClick} />
     </MainLayout>
   );
 };

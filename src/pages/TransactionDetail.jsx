@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { getTransaction, confirmReceipt } from "../services/payment";
 import useAuthStore from "../store/authStore";
+import CreateReview from "../components/review/createReview";
+import { preparePayment } from "../services/payment";
+import useReviewStore from "../store/reviewStore";
 
 const TransactionDetail = () => {
   const { transactionId } = useParams();
@@ -10,6 +13,9 @@ const TransactionDetail = () => {
   // 거래 정보 상태
   const [transaction, setTransaction] = useState(null);
 
+  const [hasReview, setHasReview] = useState(null);
+  const [showCreateReview, setShowCreateReview] = useState(false);
+
   // 로딩, 에러, 처리 등 UI 상태
   const [loading, setLoading] = useState(true);
   const [confirming, setConfirming] = useState(false);
@@ -17,6 +23,8 @@ const TransactionDetail = () => {
 
   // 로그인 사용자 정보
   const { user } = useAuthStore();
+
+  const { hasReviewCheck } = useReviewStore();
 
   // 컴포넌트가 처음 렌더링되었을 때 거래 정보 불러옴
   useEffect(() => {
@@ -32,10 +40,14 @@ const TransactionDetail = () => {
   const loadTransaction = async () => {
     try {
       const data = await getTransaction(transactionId);
+      console.log("TransactionDetail response:", data);
       setTransaction(data);
       setError(null);
     } catch (error) {
       console.error("거래 조회 실패:", error);
+      console.error("에러 응답:", err.response?.data);
+      console.error("에러 상태:", err.response?.status);
+      console.error("요청 URL:", err.config?.url);
       setError(
         error?.response?.data?.message || "거래 정보를 불러오는데 실패했습니다."
       );
@@ -72,9 +84,11 @@ const TransactionDetail = () => {
     const statusMap = {
       PAYMENT_PENDING: "결제 대기",
       PAID: "결제 완료 (에스크로 예치)",
+      READY: "결제 대기",
       SETTLEMENT_PENDING: "정산 대기",
       COMPLETED: "거래 완료",
       CANCELED: "거래 취소",
+      EXPIRED: "만료된 거래",
     };
     return statusMap[status] || status;
   };
@@ -91,6 +105,40 @@ const TransactionDetail = () => {
     return colorMap[status] || "bg-gray-100 text-gray-800";
   };
 
+  const handlePayment = async () => {
+    // 경매 결제
+    if (transaction.transactionType === "AUCTION") {
+      try {
+        const res = await preparePayment(
+          transaction.postId,
+          user.id,
+          transaction.amount
+        );
+        console.log("Auction payment created:", res);
+
+        return navigate("/checkout", {
+          state: { transaction: res },
+        });
+      } catch (err) {
+        console.error("경매 결제 준비 실패:", err);
+        alert("경매 결제를 시작할 수 없습니다.");
+        return;
+      }
+    }
+
+    // 일반 결제
+    navigate("/checkout", {
+      state: { transaction },
+    });
+  };
+
+  useEffect(() => {
+    const handleReviewExists = async () => {
+      setHasReview(await hasReviewCheck(transactionId));
+    };
+    handleReviewExists();
+  }, [hasReviewCheck]);
+
   // 로딩 중 UI
   if (loading) {
     return (
@@ -106,7 +154,7 @@ const TransactionDetail = () => {
   // 에러 UI
   if (error || !transaction) {
     return (
-      <div className="container mx-auto px-4 py-8">
+      <div className="font-presentation container mx-auto px-4 py-8">
         <div className="max-w-2xl mx-auto text-center">
           <div className="bg-red-50 border border-red-200 rounded-lg p-8">
             <div className="text-6xl mb-4">!</div>
@@ -123,9 +171,10 @@ const TransactionDetail = () => {
               >
                 홈으로
               </button>
+
               <button
                 onClick={() => window.location.reload()}
-                className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                className="px-6 py-3 bg-rebay-blue text-white rounded-lg hover:opacity-90"
               >
                 다시 시도
               </button>
@@ -143,14 +192,18 @@ const TransactionDetail = () => {
   const canConfirmReceipt =
     !isSeller && transaction.status === "PAID" && !transaction.isReceived;
 
+  const canPayment =
+    !isSeller &&
+    (transaction.status === "PAYMENT_PENDING" ||
+      transaction.status === "READY");
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="font-presentation container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         {/* 뒤로가기 + 제목 */}
         <div className="flex items-center mb-8">
           <button
             onClick={() => navigate(-1)}
-            className="mr-4 text-gray-600 hover:text-gray-800"
+            className="mr-4 cursor-pointer  text-gray-600 hover:text-gray-800"
           >
             ← 뒤로
           </button>
@@ -181,7 +234,7 @@ const TransactionDetail = () => {
           <div className="border-t pt-6 space-y-4">
             <div className="flex justify-between">
               <span className="text-gray-600">결제 금액</span>
-              <span className="text-xl font-bold text-blue-600">
+              <span className="text-xl font-bold text-rebay-blue">
                 {transaction.amount?.toLocaleString()}원
               </span>
             </div>
@@ -243,11 +296,11 @@ const TransactionDetail = () => {
             <h3 className="font-semibold text-blue-800 mb-2">
               💰 에스크로 안내
             </h3>
-            <p className="text-m text-blue-700 mb-2">
+            <p className="text-m text-rebay-blue mb-2">
               결제 금액은 현재 에스크로에 안전하게 예치되어 있습니다.
             </p>
             {canConfirmReceipt && (
-              <p className="text-m text-blue-700 font-semibold">
+              <p className="text-m text-rebay-blue font-semibold">
                 ⚠️ 상품을 받으신 후 아래 "상품 수령 확인" 버튼을 눌러주세요.
               </p>
             )}
@@ -281,39 +334,62 @@ const TransactionDetail = () => {
           </div>
         )}
 
-        {/* 버튼 영역 */}
-        {isSeller ? (
-          // 판매자: 홈 버튼만 표시
-          <div className="flex justify-center mt-6">
-            <button
-              onClick={() => navigate("/")}
-              className="px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-            >
-              홈으로
-            </button>
-          </div>
-        ) : (
-          // 구매자: 홈 + 수령확인 버튼 표시
-          <div className="flex gap-4 mt-6">
-            <button
-              onClick={() => navigate("/")}
-              className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
-            >
-              홈으로
-            </button>
-
-            {canConfirmReceipt && (
-              <button
-                onClick={handleConfirmReceipt}
-                disabled={confirming}
-                className="flex-1 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
-              >
-                {confirming ? "처리 중..." : "상품 수령 확인"}
-              </button>
-            )}
+        {transaction.status === "EXPIRED" && (
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+            <h3 className="font-semibold text-red-800 mb-2">거래 만료</h3>
+            <p className="text-sm text-red-700">
+              결제 가능 시간이 지나 거래가 만료되었습니다.
+              {transaction.transactionType === "AUCTION" &&
+                " 경매는 다시 결제할 수 없습니다."}
+            </p>
           </div>
         )}
+
+        {/* 버튼 영역 */}
+        <div className="flex gap-4">
+          <button
+            onClick={() => navigate("/")}
+            className="flex-1 px-6 py-3 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50"
+          >
+            홈으로
+          </button>
+          {canPayment && (
+            <button
+              onClick={handlePayment}
+              className="cursor-pointer flex-1 px-6 py-3 bg-rebay-blue text-white rounded-lg hover:opacity-90 font-semibold"
+            >
+              거래하기
+            </button>
+          )}
+          {canConfirmReceipt && (
+            <button
+              onClick={handleConfirmReceipt}
+              disabled={confirming}
+              className="cursor-pointer flex-1 px-6 py-3 bg-rebay-green text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+            >
+              {confirming ? "처리 중..." : "상품 수령 확인"}
+            </button>
+          )}
+          {transaction.status === "COMPLETED" && !isSeller && (
+            <button
+              disabled={hasReview}
+              type="button"
+              onClick={() => setShowCreateReview(true)}
+              className="cursor-pointer flex-1 px-6 py-3 bg-rebay-green text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"
+            >
+              리뷰 작성
+            </button>
+          )}
+        </div>
       </div>
+      {showCreateReview && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <CreateReview
+            transactionId={transactionId}
+            onClose={() => setShowCreateReview(false)}
+          />
+        </div>
+      )}
     </div>
   );
 };

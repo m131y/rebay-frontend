@@ -229,6 +229,9 @@ export default function Search() {
 
   const totalPages = Math.max(1, Math.ceil(processed.length / PAGE_SIZE));
 
+  const goPrev = () => setPage((p) => Math.max(1, p - 1));
+  const goNext = () => setPage((p) => Math.min(totalPages, p + 1));
+
   const paged = useMemo(() => {
     const start = (page - 1) * PAGE_SIZE;
     return processed.slice(start, start + PAGE_SIZE);
@@ -238,7 +241,7 @@ export default function Search() {
     <MainLayout>
       <Header />
 
-      <main className="mt-[70px]">
+      <main className="mt-[70px] font-presentation">
         <section className="mx-auto w-full max-w-[1080px] px-3">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-presentation w-full text-[22px] font-bold">
@@ -247,117 +250,6 @@ export default function Search() {
 
             <div className="flex flex-col justify-end items-center gap-2">
               <div className="flex items-center justify-end w-[600px] mx-auto p-3 font-presentation">
-                <section className="flex items-center justify-center">
-                  <div className="flex flex-row items-center justify-center gap-3">
-                    <div className="relative flex-1">
-                      <select
-                        name="largeCategory"
-                        value={selectedLgCode}
-                        onChange={handleLgChange}
-                        required
-                        className="w-full rounded-xl border border-gray-300 px-4 appearance-none py-2.5 pr-10 bg-white text-base focus:border-sky-500 focus:ring-1 focus:ring-sky-500 transition"
-                      >
-                        {Object.entries(CATEGORY_HIERARCHY).map(
-                          ([code, data]) => (
-                            <option key={code} value={code}>
-                              {data.name}
-                            </option>
-                          )
-                        )}
-                      </select>
-                      <svg
-                        className="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </div>
-                    <div className="relative flex-1">
-                      <select
-                        name="mediumCategory"
-                        value={selectedMdCode}
-                        onChange={handleMdChange}
-                        disabled={Object.keys(mdOptions).length === 0}
-                        className={`w-full rounded-xl border px-4 appearance-none py-2.5 pr-10 bg-white text-base transition ${
-                          Object.keys(mdOptions).length === 0
-                            ? "border-gray-200 text-gray-400"
-                            : "border-gray-300 focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-                        }`}
-                      >
-                        <option value="">
-                          {Object.keys(mdOptions).length === 0
-                            ? "하위 카테고리 없음"
-                            : "중분류 선택"}
-                        </option>
-                        {Object.entries(mdOptions).map(([code, data]) => (
-                          <option key={code} value={code}>
-                            {data.name}
-                          </option>
-                        ))}
-                      </select>
-                      <svg
-                        className="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </div>
-                    <div className="relative flex-1">
-                      <select
-                        name="smallCategory"
-                        value={selectedSmCode}
-                        onChange={handleSmChange}
-                        disabled={Object.keys(smOptions).length === 0}
-                        className={`w-full rounded-xl border px-4 appearance-none py-2.5 pr-10 bg-white text-base transition ${
-                          Object.keys(smOptions).length === 0
-                            ? "border-gray-200 text-gray-400"
-                            : "border-gray-300 focus:border-sky-500 focus:ring-1 focus:ring-sky-500"
-                        }`}
-                      >
-                        <option value="">
-                          {Object.keys(smOptions).length === 0
-                            ? "하위 카테고리 없음"
-                            : "소분류 선택"}
-                        </option>
-                        {Object.entries(smOptions).map(([code, data]) => (
-                          <option key={code} value={code}>
-                            {data.name}
-                          </option>
-                        ))}
-                      </select>
-                      <svg
-                        className="w-5 h-5 absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 pointer-events-none"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M19 9l-7 7-7-7"
-                        />
-                      </svg>
-                    </div>
-                  </div>
-                </section>
                 {error && <p className="text-sm text-red-600">{error}</p>}
               </div>
               <div className="w-full flex justify-end px-3">
@@ -368,7 +260,7 @@ export default function Search() {
                       sort === SORTS.LATEST ? "bg-rebay-blue text-white" : ""
                     }`}
                   >
-                    최신
+                    최신순
                   </button>
                   <button
                     onClick={() => setSort(SORTS.PRICE_ASC)}
@@ -376,7 +268,7 @@ export default function Search() {
                       sort === SORTS.PRICE_ASC ? "bg-rebay-blue text-white" : ""
                     }`}
                   >
-                    가격 오름차순
+                    높은 가격순
                   </button>
                   <button
                     onClick={() => setSort(SORTS.PRICE_DESC)}
@@ -386,7 +278,7 @@ export default function Search() {
                         : ""
                     }`}
                   >
-                    가격 내림차순
+                    낮은 가격순
                   </button>
                   <button
                     onClick={() => setSort(SORTS.TITLE_ASC)}
@@ -409,43 +301,50 @@ export default function Search() {
 
           {!loading && processed.length > 0 && (
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-              {paged.map((post) => (
-                <Product key={post.id} post={post} />
+              {paged.map((post, index) => (
+                <Product key={index} post={post} type={post.productType} />
               ))}
             </div>
           )}
 
           {totalPages > 1 && (
-            <div className="flex items-center justify-center gap-2 mt-6">
+            <div className="flex items-center justify-center gap-2 mt-8">
               <button
-                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                onClick={goPrev}
                 disabled={page <= 1}
-                className="px-3 py-1.5 rounded-lg border disabled:opacity-40"
+                className="px-4 py-2 rounded-xl bg-gray-100 border border-gray-300 font-medium text-gray-700 disabled:opacity-40 hover:bg-gray-200 transition duration-150 shadow-sm"
               >
-                이전
+                &lt; 이전
               </button>
 
+              {/* 페이지 번호 버튼 */}
               {Array.from({ length: totalPages }).map((_, i) => {
                 const n = i + 1;
-                return (
-                  <button
-                    key={n}
-                    onClick={() => setPage(n)}
-                    className={`px-3 py-1.5 rounded-lg border ${
-                      n === page ? "bg-blue-600 text-white" : ""
-                    }`}
-                  >
-                    {n}
-                  </button>
-                );
+                // 현재 페이지 주변 5개만 표시 (n-2 ~ n+2)
+                if (n >= page - 2 && n <= page + 2 && n <= totalPages) {
+                  return (
+                    <button
+                      key={n}
+                      onClick={() => setPage(n)}
+                      className={`w-10 h-10 rounded-full font-bold transition duration-150 ${
+                        n === page
+                          ? "bg-rebay-blue text-white shadow-lg shadow-blue-300/50"
+                          : "text-gray-700 hover:bg-blue-100"
+                      }`}
+                    >
+                      {n}
+                    </button>
+                  );
+                }
+                return null;
               })}
 
               <button
-                onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                onClick={goNext}
                 disabled={page >= totalPages}
-                className="px-3 py-1.5 rounded-lg border disabled:opacity-40"
+                className="px-4 py-2 rounded-xl bg-gray-100 border border-gray-300 font-medium text-gray-700 disabled:opacity-40 hover:bg-gray-200 transition duration-150 shadow-sm"
               >
-                다음
+                다음 &gt;
               </button>
             </div>
           )}

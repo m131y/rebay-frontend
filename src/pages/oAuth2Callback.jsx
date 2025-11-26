@@ -25,6 +25,7 @@ const OAuth2Callback = () => {
 
       try {
         const payload = JSON.parse(atob(token.split(".")[1]));
+
         const user = {
           id: payload.id,
           username: payload.username,
