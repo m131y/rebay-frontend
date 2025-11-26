@@ -540,7 +540,31 @@ const ProductCreate = ({ onCreated, goBack }) => {
     setError(null);
   };
 
+  const shouldShowTradeChart = useMemo(() => {
+    if (!form.finalCategoryCode) return false;
+    const code = form.finalCategoryCode;
+    console.log(code);
+
+    // 카테고리 코드가 23x, 24x, 26x 범위에 속하는지 확인
+    if (code >= 200 && code < 900) {
+      // Level 2 코드 추출 (예: 261 -> 260)
+      const level2Code = Math.floor(code / 10) * 10;
+      return (
+        level2Code === 230 ||
+        level2Code === 240 ||
+        level2Code === 260 ||
+        level2Code === 270
+      );
+    }
+
+    return false;
+  }, [form.finalCategoryCode]);
+
   const handleTradeHistory = async () => {
+    if (!shouldShowTradeChart) {
+      setTradeHistory([]);
+      return;
+    }
     setTradeHistory(await getTradeHistory(form.finalCategoryCode));
     setShowTradeHistory(true);
   };
@@ -1080,6 +1104,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
               <button
                 type="button"
                 onClick={handleTradeHistory}
+                disabled={!shouldShowTradeChart}
                 className="cursor-pointer flex bg-rebay-blue w-[100px] rounded-xl text-white font-bold justify-center items-center"
               >
                 <div>시세확인</div>

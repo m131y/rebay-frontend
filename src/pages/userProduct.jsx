@@ -420,7 +420,12 @@ export default function UserProduct() {
     if (code >= 200 && code < 900) {
       // Level 2 코드 추출 (예: 261 -> 260)
       const level2Code = Math.floor(code / 10) * 10;
-      return level2Code === 230 || level2Code === 240 || level2Code === 260;
+      return (
+        level2Code === 230 ||
+        level2Code === 240 ||
+        level2Code === 260 ||
+        level2Code === 270
+      );
     }
 
     return false;
@@ -761,10 +766,6 @@ export default function UserProduct() {
 
   useEffect(() => {
     const fetchTradeHistory = async () => {
-      if (!post?.categoryCode) {
-        return;
-      }
-
       if (!shouldShowTradeChart || !post?.categoryCode) {
         setTradeHistoryList([]);
         return;
