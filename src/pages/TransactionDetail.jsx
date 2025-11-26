@@ -56,6 +56,10 @@ const TransactionDetail = () => {
     }
   };
 
+  const handleReviewCreated = () => {
+    setHasReview(true);
+  };
+
   // 구매자가 상품 수령 확인 버튼을 눌렀을 때 실행되는 함수
   const handleConfirmReceipt = async () => {
     const confirmed = window.confirm(
@@ -387,6 +391,7 @@ const TransactionDetail = () => {
           <CreateReview
             transactionId={transactionId}
             onClose={() => setShowCreateReview(false)}
+            onReviewCreated={handleReviewCreated}
           />
         </div>
       )}

@@ -98,7 +98,6 @@ const Header = () => {
               >
                 <option value="TITLE">제목</option>
                 <option value="USERNAME">작성자</option>
-                <option value="HASHTAG">해시태그</option>
               </select>
 
               <input

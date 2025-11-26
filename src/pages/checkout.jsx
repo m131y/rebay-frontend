@@ -57,7 +57,7 @@ const Checkout = () => {
   if (!transaction) return null;
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="font-presentation container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-3xl font-bold mb-8">결제하기</h1>
 
@@ -70,7 +70,7 @@ const Checkout = () => {
             </div>
             <div className="flex justify-between">
               <span className="text-gray-600">결제 금액</span>
-              <span className="text-xl font-bold text-blue-600">
+              <span className="text-xl font-bold text-rebay-blue">
                 {transaction.amount.toLocaleString()}원
               </span>
             </div>
@@ -103,7 +103,7 @@ const Checkout = () => {
           <button
             onClick={handlePayment}
             disabled={!tosspayments || isLoading}
-            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-semibold"
+            className="flex-1 px-6 py-3 bg-rebay-blue text-white rounded-lg hover:opacity-90 font-semibold"
           >
             {isLoading ? "처리중.." : "결제하기"}
           </button>
