@@ -675,7 +675,7 @@ export default function UserProduct() {
           <div className="mb-6">
             <p className="text-sm text-gray-500 mb-1">현재 최고가</p>
             <p className="text-2xl font-bold text-rebay-blue">
-              {priceFormat(post.price)}원
+              {priceFormat(post.currentPrice)}원
             </p>
           </div>
 
@@ -687,7 +687,7 @@ export default function UserProduct() {
               type="number"
               value={bidInput}
               onChange={(e) => setBidInput(e.target.value)}
-              placeholder={post.price + 1000}
+              placeholder={post.currentPrice + 1000}
               className="w-full px-4 py-3 rounded-xl bg-gray-50 border border-gray-200 focus:border-rebay-blue focus:ring-2 focus:ring-blue-100 outline-none transition-all text-lg font-bold mb-6"
               autoFocus
             />
@@ -870,7 +870,9 @@ export default function UserProduct() {
                   {post?.title}
                 </h1>
                 <div className="text-[24px] font-bold">
-                  {post?.price != null ? `${priceFormat(post.price)}원` : ""}
+                  {post?.currentPrice != null
+                    ? `${priceFormat(post.currentPrice)}원`
+                    : ""}
                 </div>
                 {isAuction && (
                   <div>
