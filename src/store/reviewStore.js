@@ -107,6 +107,24 @@ const useReviewStore = create((set) => ({
       throw err;
     }
   },
+
+  hasReviewCheck: async (transactionId) => {
+    set({ loading: true, error: null });
+    try {
+      const data = await reviewService.hasReviewCheck(transactionId);
+      set({
+        loading: false,
+      });
+      return data;
+    } catch (err) {
+      set({
+        error:
+          err.response?.data.message || "Failed to get seller review counts",
+        loading: false,
+      });
+      throw err;
+    }
+  },
 }));
 
 export default useReviewStore;

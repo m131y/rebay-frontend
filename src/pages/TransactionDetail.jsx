@@ -4,6 +4,7 @@ import { getTransaction, confirmReceipt } from "../services/payment";
 import useAuthStore from "../store/authStore";
 import CreateReview from "../components/review/createReview";
 import { preparePayment } from "../services/payment";
+import useReviewStore from "../store/reviewStore";
 
 const TransactionDetail = () => {
   const { transactionId } = useParams();
@@ -12,6 +13,7 @@ const TransactionDetail = () => {
   // 거래 정보 상태
   const [transaction, setTransaction] = useState(null);
 
+  const [hasReview, setHasReview] = useState(null);
   const [showCreateReview, setShowCreateReview] = useState(false);
 
   // 로딩, 에러, 처리 등 UI 상태
@@ -21,6 +23,8 @@ const TransactionDetail = () => {
 
   // 로그인 사용자 정보
   const { user } = useAuthStore();
+
+  const { hasReviewCheck } = useReviewStore();
 
   // 컴포넌트가 처음 렌더링되었을 때 거래 정보 불러옴
   useEffect(() => {
@@ -127,6 +131,13 @@ const TransactionDetail = () => {
       state: { transaction },
     });
   };
+
+  useEffect(() => {
+    const handleReviewExists = async () => {
+      setHasReview(await hasReviewCheck(transactionId));
+    };
+    handleReviewExists();
+  }, [hasReviewCheck]);
 
   // 로딩 중 UI
   if (loading) {
@@ -361,6 +372,7 @@ const TransactionDetail = () => {
           )}
           {transaction.status === "COMPLETED" && !isSeller && (
             <button
+              disabled={hasReview}
               type="button"
               onClick={() => setShowCreateReview(true)}
               className="cursor-pointer flex-1 px-6 py-3 bg-rebay-green text-white rounded-lg hover:opacity-90 disabled:bg-gray-400 disabled:cursor-not-allowed font-semibold"

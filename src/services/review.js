@@ -29,6 +29,11 @@ const reviewService = {
     const response = await api.get(`api/review/counts/${sellerId}`);
     return response.data;
   },
+
+  async hasReviewCheck(transactionId) {
+    const response = await api.get(`api/review/${transactionId}/check`);
+    return response.data;
+  },
 };
 
 export default reviewService;
