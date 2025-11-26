@@ -12,6 +12,7 @@ import useStatisticsStore from "../../store/statisticsStore";
 import Trade from "./Trade";
 import aiService from "../../services/ai";
 import { FiCpu } from "react-icons/fi";
+import { v4 as uuidv4 } from "uuid";
 
 /** ========== 카테고리 계층 ========== */
 const CATEGORY_HIERARCHY = {
@@ -248,7 +249,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
 
             if (isAbs) {
               return {
-                id: crypto.randomUUID(),
+                id: uuidv4(),
                 preview: orig,
                 url: orig,
               };
@@ -259,13 +260,13 @@ const ProductCreate = ({ onCreated, goBack }) => {
                 `/api/upload/post/image?url=${encodeURIComponent(orig)}`
               );
               return {
-                id: crypto.randomUUID(),
+                id: uuidv4(),
                 preview: r?.data?.imageUrl || orig,
                 url: orig,
               };
             } catch {
               return {
-                id: crypto.randomUUID(),
+                id: uuidv4(),
                 preview: orig,
                 url: orig,
               };
@@ -361,7 +362,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
     }
 
     const localItems = files.map((file) => ({
-      id: crypto.randomUUID(),
+      id: uuidv4(),
       preview: URL.createObjectURL(file),
       file,
       url: null,
