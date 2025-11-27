@@ -209,9 +209,9 @@ const Home = () => {
                 <Link
                   to="/products?category=200"
                   onClick={handleClick}
-                  className="cursor-pointer w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center"
+                  className="shadow cursor-pointer w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center"
                 >
-                  <div className="font-presentation text-black text-[20px] font-medium">
+                  <div className=" font-presentation text-black text-[20px] font-medium">
                     전자기기
                   </div>
                 </Link>
@@ -219,7 +219,7 @@ const Home = () => {
                 <Link
                   to="/products?category=400"
                   onClick={handleClick}
-                  className="cursor-pointer w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center"
+                  className="shadow cursor-pointer w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center"
                 >
                   <div className="font-presentation text-black text-[20px] font-medium">
                     가구/인테리어
@@ -229,7 +229,7 @@ const Home = () => {
                 <Link
                   to="/products?category=800"
                   onClick={handleClick}
-                  className="cursor-pointer w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center"
+                  className="shadow cursor-pointer w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center"
                 >
                   <div className="font-presentation text-black text-[20px] font-medium">
                     의류/잡화
@@ -239,7 +239,7 @@ const Home = () => {
                 <Link
                   to="/products?category=900"
                   onClick={handleClick}
-                  className="cursor-pointer w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center"
+                  className="shadow cursor-pointer w-[220px] h-[120px] bg-white rounded-[10px] border border-[#e6e6e6] p-[24.99px] flex items-center justify-center"
                 >
                   <div className="font-presentation text-black text-[20px] font-medium">
                     기타 중고 물품
