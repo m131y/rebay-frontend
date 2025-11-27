@@ -90,7 +90,14 @@ const Header = () => {
             onSubmit={handleSearch}
             className="font-presentation flex items-center relative"
           >
-            <div className="flex items-center bg-rebay-search w-[400px] h-[40px] px-[20px] rounded-full">
+            <div
+              onClick={() => {
+                if (!user) {
+                  setShowLogin(true);
+                }
+              }}
+              className="flex items-center bg-rebay-search w-[400px] h-[40px] px-[20px] rounded-full"
+            >
               <select
                 value={target}
                 onChange={(e) => setTarget(e.target.value)}
@@ -98,7 +105,6 @@ const Header = () => {
               >
                 <option value="TITLE">제목</option>
                 <option value="USERNAME">작성자</option>
-                <option value="HASHTAG">해시태그</option>
               </select>
 
               <input

@@ -10,7 +10,7 @@ const PaymentFail = () => {
   const orderId = searchParams.get("orderId");
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="font-presentation container mx-auto px-4 py-8">
       <div className="max-w-2xl mx-auto">
         <div className="bg-red-50 border border-red-200 rounded-lg p-8 mb-6">
           <div className="text-center">
@@ -32,10 +32,10 @@ const PaymentFail = () => {
         )}
 
         <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-6">
-          <h3 className="font-semibold text-blue-800 mb-2">
+          <h3 className="font-semibold text-rebay-blue mb-2">
             결제 실패 주요 원인
           </h3>
-          <ul className="list-disc list-inside space-y-1 text-sm text-blue-700">
+          <ul className="list-disc list-inside space-y-1 text-sm text-rebay-blue">
             <li>다른 사용자가 이미 상품을 구매함</li>
             <li>카드 한도 초과 또는 잔액 부족</li>
             <li>카드 정보 입력 오류</li>
@@ -52,7 +52,7 @@ const PaymentFail = () => {
           </button>
           <button
             onClick={() => navigate(-1)}
-            className="flex-1 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+            className="flex-1 px-6 py-3 bg-rebay-blue text-white rounded-lg hover:opacity-90"
           >
             다시 시도
           </button>

@@ -4,7 +4,7 @@ import { BsStar, BsStarFill } from "react-icons/bs";
 import useReviewStore from "../../store/reviewStore";
 import { useEffect, useMemo, useState } from "react";
 
-const CreateReview = ({ review, transactionId, onClose }) => {
+const CreateReview = ({ review, transactionId, onClose, onReviewCreated }) => {
   const { createReview, updateReview, loading, error } = useReviewStore();
 
   const [formData, setFormData] = useState({
@@ -25,6 +25,7 @@ const CreateReview = ({ review, transactionId, onClose }) => {
       } else {
         await createReview(transactionId, formData);
         alert(`성공적으로 등록되었습니다.`);
+        onReviewCreated();
         onClose();
       }
     } catch (error) {

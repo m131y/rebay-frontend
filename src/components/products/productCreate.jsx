@@ -14,8 +14,10 @@ import aiService from "../../services/ai";
 import { FiCpu } from "react-icons/fi";
 import { v4 as uuidv4 } from "uuid";
 
-/** ========== 카테고리 계층 ========== */
 const CATEGORY_HIERARCHY = {
+  // -------------------------
+  // 200: 전자기기 (Digital Devices)
+  // -------------------------
   200: {
     name: "전자기기",
     children: {
@@ -23,20 +25,45 @@ const CATEGORY_HIERARCHY = {
         name: "카메라",
         children: {
           211: { name: "DSLR/미러리스" },
-          212: { name: "일반 디지털 카메라" },
+          212: { name: "필름/토이카메라" },
+          213: { name: "액션캠/드론" },
         },
       },
-      220: { name: "음향기기", children: {} },
-      230: { name: "게임/취미", children: {} },
+      220: {
+        name: "음향기기",
+        children: {
+          221: { name: "이어폰/헤드폰" },
+          222: { name: "스피커/앰프" },
+        },
+      },
+      230: {
+        name: "게임/타이틀",
+        children: {
+          231: { name: "PlayStation 5" },
+          232: { name: "PlayStation 5 pro" },
+          233: { name: "닌텐도 스위치" },
+          234: { name: "닌텐도 스위치 라이트" },
+          235: { name: "닌텐도 스위치 2" },
+        },
+      },
       240: {
         name: "노트북/PC",
         children: {
-          241: { name: "노트북" },
-          242: { name: "데스크탑/본체" },
-          243: { name: "모니터/주변기기" },
+          241: { name: "MacBook Air 13" },
+          242: { name: "MacBook Air 15" },
+          243: { name: "MacBook Pro 14" },
+          244: { name: "MacBook Pro 16" },
         },
       },
-      250: { name: "태블릿/웨어러블", children: {} },
+      250: {
+        name: "모니터/주변기기",
+        children: {
+          251: { name: "모니터" },
+          252: { name: "키보드/마우스" },
+          253: { name: "프린터/스캐너" },
+        },
+      },
+
       260: {
         name: "핸드폰",
         children: {
@@ -59,21 +86,207 @@ const CATEGORY_HIERARCHY = {
           277: { name: "아이폰17" },
           278: { name: "아이폰17 Air" },
           279: { name: "아이폰17 Pro Max" },
-          281: { name: "기타 아이폰 모델" },
-          290: { name: "갤럭시/기타 안드로이드폰" },
         },
       },
-      280: { name: "디지털 액세서리", children: {} },
+      280: {
+        name: "스마트워치/밴드",
+        children: {}, // Level 3 코드가 없으므로 빈 객체 유지
+      },
     },
   },
 
-  300: { name: "생활가전", children: {} },
-  400: { name: "가구/인테리어", children: {} },
-  500: { name: "생활/주방", children: {} },
-  600: { name: "도서", children: {} },
-  700: { name: "식물/반려동물", children: {} },
-  800: { name: "의류/잡화", children: {} },
-  900: { name: "기타 중고 물품", children: {} },
+  // -------------------------
+  // 300: 생활가전 (Home Appliances)
+  // -------------------------
+  300: {
+    name: "생활가전",
+    children: {
+      310: {
+        name: "대형가전",
+        children: {
+          311: { name: "TV" },
+          312: { name: "냉장고/김치냉장고" },
+          313: { name: "세탁기/건조기" },
+        },
+      },
+      320: {
+        name: "주방가전",
+        children: {
+          321: { name: "커피머신/포트" },
+          322: { name: "전자레인지/오븐" },
+        },
+      },
+      330: {
+        name: "계절가전/공기",
+        children: {
+          331: { name: "에어컨/냉방" },
+          332: { name: "난방기/온풍기" },
+          333: { name: "공기청정기/가습기" },
+        },
+      },
+      340: {
+        name: "미용/건강가전",
+        children: {}, // Level 3 코드가 없으므로 빈 객체 유지
+      },
+    },
+  },
+
+  // -------------------------
+  // 400: 가구/인테리어 (Furniture/Interior)
+  // -------------------------
+  400: {
+    name: "가구/인테리어",
+    children: {
+      410: {
+        name: "침대/매트리스",
+        children: {
+          411: { name: "싱글침대" },
+          412: { name: "더블/퀸/킹 침대" },
+          413: { name: "화장대/협탁" },
+        },
+      },
+      420: {
+        name: "소파/테이블",
+        children: {
+          421: { name: "패브릭/가죽 소파" },
+          422: { name: "식탁/책상" },
+        },
+      },
+      430: {
+        name: "수납/서랍장",
+        children: {
+          431: { name: "책장/선반" },
+          432: { name: "옷장/붙박이장" },
+        },
+      },
+      440: {
+        name: "조명/DIY",
+        children: {
+          441: { name: "스탠드/장스탠드" },
+          442: { name: "인테리어 소품" },
+        },
+      },
+    },
+  },
+
+  // -------------------------
+  // 500: 생활/주방 (Home/Kitchen)
+  // -------------------------
+  500: {
+    name: "생활/주방",
+    children: {
+      510: {
+        name: "조리도구",
+        children: {
+          511: { name: "냄비/프라이팬" },
+          512: { name: "칼/도마" },
+        },
+      },
+      520: {
+        name: "식기/컵",
+        children: {
+          521: { name: "접시/그릇" },
+          522: { name: "머그/와인잔" },
+        },
+      },
+      530: {
+        name: "침구/패브릭",
+        children: {
+          531: { name: "이불/베개" },
+          532: { name: "커튼/블라인드" },
+        },
+      },
+      540: {
+        name: "청소/세탁용품",
+        children: {}, // Level 3 코드가 없으므로 빈 객체 유지
+      },
+    },
+  },
+
+  // -------------------------
+  // 600: 도서 (Books)
+  // -------------------------
+  600: {
+    name: "도서",
+    children: {
+      610: {
+        name: "소설/에세이",
+        children: {}, // Level 3 코드가 없으므로 빈 객체 유지
+      },
+      620: {
+        name: "학습/수험서",
+        children: {}, // Level 3 코드가 없으므로 빈 객체 유지
+      },
+    },
+  },
+
+  // -------------------------
+  // 700: 식물/반려동물 (Plants/Pets)
+  // -------------------------
+  700: {
+    name: "식물/반려동물",
+    children: {
+      710: {
+        name: "화분/정원용품",
+        children: {}, // Level 3 코드가 없으므로 빈 객체 유지
+      },
+      720: {
+        name: "반려동물용품",
+        children: {}, // Level 3 코드가 없으므로 빈 객체 유지
+      },
+    },
+  },
+
+  // -------------------------
+  // 800: 의류/잡화 (Apparel/Goods)
+  // -------------------------
+  800: {
+    name: "의류/잡화",
+    children: {
+      810: {
+        name: "상의/아우터",
+        children: {
+          811: { name: "티셔츠/셔츠" },
+          812: { name: "맨투맨/후드티" },
+          813: { name: "코트/자켓" },
+        },
+      },
+      820: {
+        name: "하의/원피스",
+        children: {
+          821: { name: "청바지/슬랙스" },
+          822: { name: "스커트/원피스" },
+        },
+      },
+      830: {
+        name: "가방/잡화",
+        children: {
+          831: { name: "명품 가방" },
+          832: { name: "지갑/벨트" },
+          833: { name: "모자/장갑" },
+        },
+      },
+      840: {
+        name: "신발",
+        children: {
+          841: { name: "운동화/스니커즈" },
+          842: { name: "구두/부츠" },
+        },
+      },
+      850: {
+        name: "시계/쥬얼리",
+        children: {}, // Level 3 코드가 없으므로 빈 객체 유지
+      },
+    },
+  },
+
+  // -------------------------
+  // 900: 기타 중고 물품 (Other Used Items)
+  // -------------------------
+  900: {
+    name: "기타 중고 물품",
+    children: {}, // Level 2, 3 코드가 없으므로 빈 객체 유지
+  },
 };
 
 const DEFAULT_LARGE_CODE = Object.keys(CATEGORY_HIERARCHY)[0] || "";
@@ -327,7 +540,31 @@ const ProductCreate = ({ onCreated, goBack }) => {
     setError(null);
   };
 
+  const shouldShowTradeChart = useMemo(() => {
+    if (!form.finalCategoryCode) return false;
+    const code = form.finalCategoryCode;
+    console.log(code);
+
+    // 카테고리 코드가 23x, 24x, 26x 범위에 속하는지 확인
+    if (code >= 200 && code < 900) {
+      // Level 2 코드 추출 (예: 261 -> 260)
+      const level2Code = Math.floor(code / 10) * 10;
+      return (
+        level2Code === 230 ||
+        level2Code === 240 ||
+        level2Code === 260 ||
+        level2Code === 270
+      );
+    }
+
+    return false;
+  }, [form.finalCategoryCode]);
+
   const handleTradeHistory = async () => {
+    if (!shouldShowTradeChart) {
+      setTradeHistory([]);
+      return;
+    }
     setTradeHistory(await getTradeHistory(form.finalCategoryCode));
     setShowTradeHistory(true);
   };
@@ -867,6 +1104,7 @@ const ProductCreate = ({ onCreated, goBack }) => {
               <button
                 type="button"
                 onClick={handleTradeHistory}
+                disabled={!shouldShowTradeChart}
                 className="cursor-pointer flex bg-rebay-blue w-[100px] rounded-xl text-white font-bold justify-center items-center"
               >
                 <div>시세확인</div>
